@@ -101,8 +101,8 @@ export default function ETFDetailModal({
                   }}
                   labelStyle={{ color: "#9ca3af" }}
                   itemStyle={{ color: "#34d399" }}
-                  formatter={(value: number) => [
-                    `$${value.toFixed(2)}`,
+                  formatter={(value: number | undefined) => [
+                    value != null ? `$${value.toFixed(2)}` : "—",
                     "Price",
                   ]}
                 />
