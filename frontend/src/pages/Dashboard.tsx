@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import Navbar from "../components/layout/Navbar";
 import PortfolioSummary from "../components/portfolio/PortfolioSummary";
 import ETFList from "../components/etf/ETFList";
 import ETFDetailModal from "../components/etf/ETFDetailModal";
 import { usePortfolio } from "../hooks/usePortfolio";
 import { useETFHistory } from "../hooks/useETFHistory";
+import { apiUpload } from "../api/client";
 
 export default function Dashboard() {
-  const { data: portfolio, loading, error } = usePortfolio();
+  const { getToken } = useAuth();
+  const { data: portfolio, loading, error, refetch } = usePortfolio();
   const {
     data: historyData,
     loading: historyLoading,
@@ -15,6 +18,9 @@ export default function Dashboard() {
     fetchHistory,
   } = useETFHistory();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSelectETF = (ticker: string) => {
     setSelectedTicker(ticker);
@@ -25,11 +31,60 @@ export default function Dashboard() {
     setSelectedTicker(null);
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await apiUpload("/api/v1/portfolio/upload", getToken, file);
+      refetch();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0d1117] text-gray-100">
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-sm text-gray-500 uppercase tracking-wider font-mono">
+            Portfolio
+          </h1>
+          <div className="flex items-center gap-3">
+            {uploadError && (
+              <span className="text-red-400 text-xs font-mono">
+                {uploadError}
+              </span>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              disabled={uploading}
+              className="px-3 py-1.5 border border-gray-700 rounded text-xs font-mono text-gray-300 hover:text-green-400 hover:border-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {uploading ? "UPLOADING..." : "UPLOAD CSV"}
+            </button>
+          </div>
+        </div>
+
         {loading && (
           <div className="text-gray-500 font-mono text-center py-12">
             Loading portfolio...
