@@ -72,6 +72,8 @@ class ETFHistory(Model):
     close_price = NumberAttribute()
     adjusted_close = NumberAttribute(null=True)
     volume = NumberAttribute()
+    risk_range_low = NumberAttribute(null=True)
+    risk_range_high = NumberAttribute(null=True)
 
     # Metadata
     created_at = UTCDateTimeAttribute(default=lambda: datetime.now(timezone.utc))

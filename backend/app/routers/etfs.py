@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from typing import Optional
 from datetime import datetime
 from pynamodb.exceptions import DoesNotExist, GetError
@@ -68,7 +68,7 @@ async def list_etfs(
     description="Retrieve current ETF information including price and metadata"
 )
 async def get_etf(
-    ticker: str = Query(
+    ticker: str = Path(
         ...,
         min_length=1,
         max_length=10,
@@ -143,7 +143,7 @@ async def get_etf(
     description="Retrieve historical price data for an ETF with optional date range filtering"
 )
 async def get_etf_history(
-    ticker: str = Query(
+    ticker: str = Path(
         ...,
         min_length=1,
         max_length=10,
@@ -247,7 +247,9 @@ async def get_etf_history(
                     low_price=item.low_price,
                     close_price=item.close_price,
                     adjusted_close=item.adjusted_close,
-                    volume=item.volume
+                    volume=item.volume,
+                    risk_range_low=getattr(item, "risk_range_low", None),
+                    risk_range_high=getattr(item, "risk_range_high", None),
                 )
             )
 

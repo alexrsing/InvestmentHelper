@@ -47,6 +47,8 @@ class ETFHistoryItemResponse(BaseModel):
     close_price: float = Field(..., gt=0)
     adjusted_close: Optional[float] = Field(None, gt=0)
     volume: float = Field(..., ge=0)
+    risk_range_low: Optional[float] = Field(None, gt=0, description="Risk range lower bound")
+    risk_range_high: Optional[float] = Field(None, gt=0, description="Risk range upper bound")
 
     @field_validator('high_price')
     @classmethod

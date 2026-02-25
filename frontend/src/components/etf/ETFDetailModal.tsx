@@ -5,7 +5,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
 import type { ETFHistoryResponse } from "../../types";
 
@@ -28,11 +27,9 @@ export default function ETFDetailModal({
   const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date));
   const hasEnoughData = sorted.length >= 2;
 
-  const latestWithRisk = [...sorted]
-    .reverse()
-    .find((h) => h.risk_range_low != null && h.risk_range_high != null);
-  const riskLow = latestWithRisk?.risk_range_low;
-  const riskHigh = latestWithRisk?.risk_range_high;
+  const hasRiskData = sorted.some(
+    (h) => h.risk_range_low != null || h.risk_range_high != null
+  );
 
   return (
     <div
@@ -101,9 +98,9 @@ export default function ETFDetailModal({
                   }}
                   labelStyle={{ color: "#9ca3af" }}
                   itemStyle={{ color: "#34d399" }}
-                  formatter={(value: number | undefined) => [
+                  formatter={(value: number | undefined, name?: string) => [
                     value != null ? `$${value.toFixed(2)}` : "—",
-                    "Price",
+                    name ?? "",
                   ]}
                 />
                 <Line
@@ -114,32 +111,26 @@ export default function ETFDetailModal({
                   dot={false}
                   name="Price"
                 />
-                {riskLow != null && (
-                  <ReferenceLine
-                    y={riskLow}
+                {hasRiskData && (
+                  <Line
+                    type="monotone"
+                    dataKey="risk_range_low"
                     stroke="#f87171"
+                    strokeWidth={1}
                     strokeDasharray="4 4"
-                    label={{
-                      value: `Low $${riskLow}`,
-                      fill: "#f87171",
-                      fontSize: 10,
-                      fontFamily: "monospace",
-                      position: "left",
-                    }}
+                    dot={false}
+                    name="Risk Low"
                   />
                 )}
-                {riskHigh != null && (
-                  <ReferenceLine
-                    y={riskHigh}
+                {hasRiskData && (
+                  <Line
+                    type="monotone"
+                    dataKey="risk_range_high"
                     stroke="#f87171"
+                    strokeWidth={1}
                     strokeDasharray="4 4"
-                    label={{
-                      value: `High $${riskHigh}`,
-                      fill: "#f87171",
-                      fontSize: 10,
-                      fontFamily: "monospace",
-                      position: "left",
-                    }}
+                    dot={false}
+                    name="Risk High"
                   />
                 )}
               </LineChart>
