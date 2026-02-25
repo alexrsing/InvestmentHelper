@@ -26,6 +26,42 @@ router = APIRouter(
 
 
 @router.get(
+    "",
+    response_model=list[ETFResponse],
+    summary="List all ETFs",
+    description="Retrieve all ETFs in the system",
+)
+async def list_etfs(
+    current_user: dict = Depends(get_current_active_user),
+):
+    try:
+        etfs = ETF.scan()
+        return [
+            ETFResponse(
+                ticker=etf.ticker,
+                name=etf.name,
+                description=etf.description,
+                expense_ratio=etf.expense_ratio,
+                aum=etf.aum,
+                inception_date=etf.inception_date,
+                current_price=etf.current_price,
+                open_price=etf.open_price,
+                risk_range_low=etf.risk_range_low,
+                risk_range_high=etf.risk_range_high,
+                created_at=etf.created_at,
+                updated_at=etf.updated_at,
+            )
+            for etf in etfs
+        ]
+    except Exception as e:
+        print(f"Error listing ETFs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while listing ETFs",
+        )
+
+
+@router.get(
     "/{ticker}",
     response_model=ETFResponse,
     summary="Get ETF data",
