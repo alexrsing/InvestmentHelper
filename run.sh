@@ -9,7 +9,8 @@ echo ""
 echo "=== Starting servers ==="
 
 # Start backend on port 8000
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 &
+cd "$ROOT_DIR"
+uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 
 # Start frontend dev server on port 3000

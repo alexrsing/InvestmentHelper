@@ -1,0 +1,15 @@
+[project]
+name = "investmenthelper"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "boto3",
+    "pynamodb",
+    "PyJWT[crypto]",
+    "python-multipart",
+    "pydantic-settings",
+]

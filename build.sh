@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=== Building Backend ==="
-pip install -r "$ROOT_DIR/requirements.txt"
+cd "$ROOT_DIR"
+uv sync
 
 echo ""
 echo "=== Building Frontend ==="
