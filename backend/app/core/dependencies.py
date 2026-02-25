@@ -1,6 +1,5 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
 
 from .security import decode_token
 
@@ -12,10 +11,10 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> dict:
     """
-    Dependency to get the current authenticated user from JWT token.
+    Dependency to get the current authenticated user from a Clerk JWT.
 
     Returns:
-        dict: User data from token payload
+        dict: User data extracted from token payload
 
     Raises:
         HTTPException: If token is invalid or expired
@@ -23,15 +22,7 @@ async def get_current_user(
     token = credentials.credentials
     payload = decode_token(token)
 
-    # Validate token type
-    if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token type",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user_id: Optional[str] = payload.get("sub")
+    user_id: str | None = payload.get("sub")
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,7 +33,7 @@ async def get_current_user(
     return {
         "user_id": user_id,
         "email": payload.get("email"),
-        "username": payload.get("username")
+        "username": payload.get("username"),
     }
 
 

@@ -18,7 +18,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' https://*.clerk.accounts.dev; "
+            "connect-src 'self' https://*.clerk.accounts.dev; "
+            "img-src 'self' https://img.clerk.com;"
+        )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
         return response

@@ -1,5 +1,17 @@
+import json
+import boto3
 from pydantic_settings import BaseSettings
 from typing import List
+
+
+def _load_secrets(secret_name: str = "investment-helper/config", region: str = "us-east-1") -> dict:
+    """Fetch sensitive config from AWS Secrets Manager."""
+    client = boto3.client("secretsmanager", region_name=region)
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response["SecretString"])
+
+
+_secrets = _load_secrets()
 
 
 class Settings(BaseSettings):
@@ -9,11 +21,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Investment Helper API"
 
-    # Security
-    SECRET_KEY: str  # Required - must be set in .env
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    # Clerk Auth (from AWS Secrets Manager)
+    CLERK_SECRET_KEY: str = _secrets["CLERK_SECRET_KEY"]
+    CLERK_JWKS_URL: str = _secrets["CLERK_JWKS_URL"]
+    CLERK_ISSUER: str = _secrets["CLERK_ISSUER"]
+    CLERK_AUDIENCE: str | None = _secrets.get("CLERK_AUDIENCE")
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000"]
@@ -28,7 +40,6 @@ class Settings(BaseSettings):
     DYNAMODB_ENDPOINT: str | None = None  # For local development
 
     class Config:
-        env_file = ".env"
         case_sensitive = True
 
 
