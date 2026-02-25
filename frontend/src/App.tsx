@@ -1,5 +1,32 @@
-function App() {
-  return <div className="bg-[#0d1117] text-green-400 min-h-screen flex items-center justify-center font-mono text-2xl">Investment Helper</div>;
-}
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  SignedIn,
+  SignedOut,
+  RedirectToSignIn,
+} from "@clerk/clerk-react";
+import SignInPage from "./pages/SignInPage";
+import Dashboard from "./pages/Dashboard";
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route
+          path="/"
+          element={
+            <>
+              <SignedIn>
+                <Dashboard />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
