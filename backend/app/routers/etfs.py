@@ -78,6 +78,9 @@ async def get_etf(
             aum=etf.aum,
             inception_date=etf.inception_date,
             current_price=etf.current_price,
+            open_price=etf.open_price,
+            risk_range_low=etf.risk_range_low,
+            risk_range_high=etf.risk_range_high,
             created_at=etf.created_at,
             updated_at=etf.updated_at
         )

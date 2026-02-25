@@ -27,6 +27,9 @@ class ETF(Model):
     aum = NumberAttribute(null=True)  # Assets Under Management
     inception_date = UTCDateTimeAttribute(null=True)
     current_price = NumberAttribute(null=True)
+    open_price = NumberAttribute(null=True)
+    risk_range_low = NumberAttribute(null=True)
+    risk_range_high = NumberAttribute(null=True)
 
     # Metadata
     created_at = UTCDateTimeAttribute(default=lambda: datetime.now(timezone.utc))

@@ -28,6 +28,9 @@ class ETFResponse(ETFBase):
     aum: Optional[float] = Field(None, ge=0, description="Assets Under Management in dollars")
     inception_date: Optional[datetime] = None
     current_price: Optional[float] = Field(None, gt=0, description="Current price per share")
+    open_price: Optional[float] = Field(None, gt=0, description="Opening price")
+    risk_range_low: Optional[float] = Field(None, gt=0, description="Risk range lower bound")
+    risk_range_high: Optional[float] = Field(None, gt=0, description="Risk range upper bound")
     created_at: datetime
     updated_at: datetime
 
