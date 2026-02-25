@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Backend: Install dependencies
-pip install -r requirements.txt
+# Backend: Install dependencies (using uv)
+uv sync
 
 # Backend: Run the dev server (from repo root)
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -20,7 +20,7 @@ docker run -p 8000:8000 investment-helper
 
 # Backend: Environment setup
 cp backend/.env.example backend/.env
-# Then edit backend/.env — SECRET_KEY is required
+# Sensitive config (Clerk keys) loaded from AWS Secrets Manager
 
 # Frontend: Install dependencies
 cd frontend && npm install
@@ -44,18 +44,21 @@ FastAPI backend serving a REST API for ETF investment data, backed by AWS Dynamo
 Request → RequestLoggingMiddleware → RateLimitMiddleware → SecurityHeadersMiddleware → CORS → Router → Dependency (JWT auth) → Handler
 ```
 
-All API routes are under `/api/v1` (configured via `settings.API_V1_STR`). The only router currently is `etfs` at `/api/v1/etfs`.
+All API routes are under `/api/v1` (configured via `settings.API_V1_STR`). Routers: `etfs` at `/api/v1/etfs`, `portfolio` at `/api/v1/portfolio`.
 
 ### Key layers
 
 - **`backend/app/main.py`** — FastAPI app setup, middleware stack, global exception handler, health check at `/health`
-- **`backend/app/core/config.py`** — `Settings` class using pydantic-settings; loads from `backend/.env`. `SECRET_KEY` has no default and must be set.
-- **`backend/app/core/security.py`** — JWT token creation/decoding (HS256 via python-jose), bcrypt password hashing via passlib
+- **`backend/app/core/config.py`** — `Settings` class using pydantic-settings; Clerk keys loaded from AWS Secrets Manager (`investment-helper/config`)
+- **`backend/app/core/security.py`** — Clerk JWT validation via JWKS (RS256 via PyJWT)
 - **`backend/app/core/dependencies.py`** — FastAPI dependencies for auth: `get_current_active_user` (standard auth), `require_role("admin")` (RBAC factory)
 - **`backend/app/core/middleware.py`** — Three middlewares: security headers, in-memory per-IP rate limiting, request logging
-- **`backend/app/models/etf.py`** — PynamoDB models: `ETF` (hash key: ticker) and `ETFHistory` (hash: ticker, range: date string). Tables: `etfs`, `etf_history`
+- **`backend/app/models/etf.py`** — PynamoDB models: `ETF` (hash key: ticker, includes `open_price`, `risk_range_low`, `risk_range_high`) and `ETFHistory` (hash: ticker, range: date string). Tables: `etfs`, `etf_history`
+- **`backend/app/models/portfolio.py`** — `Portfolio` model (hash key: user_id) with `holdings` (ListAttribute of `HoldingMap`). Table: `portfolios`
 - **`backend/app/schemas/etf.py`** — Pydantic v2 schemas with field validators for input/output validation
-- **`backend/app/routers/etfs.py`** — Two endpoints: `GET /{ticker}` and `GET /{ticker}/history` (with date range filtering)
+- **`backend/app/schemas/portfolio.py`** — Portfolio response schemas (`PortfolioResponse`, `PositionResponse`)
+- **`backend/app/routers/etfs.py`** — Three endpoints: `GET /` (list all), `GET /{ticker}`, `GET /{ticker}/history`
+- **`backend/app/routers/portfolio.py`** — `GET /portfolio` endpoint: returns portfolio with positions enriched with live ETF data, calculates total_value and percent_change
 - **`backend/app/services/`** — Stub files (`etf_service.py`, `portfolio_service.py`) with unimplemented async functions
 
 ### Patterns to follow when adding new routes
@@ -73,23 +76,29 @@ Uses PynamoDB ORM. Models hardcode `region = "us-east-1"` in their Meta class. S
 
 ### Auth
 
-All ETF endpoints require JWT Bearer tokens. Tokens carry `sub` (user_id), `email`, `username` in payload. There is no login/registration endpoint yet — tokens must be created programmatically via `create_access_token()` for testing.
+All API endpoints require JWT Bearer tokens issued by Clerk. Tokens are validated via Clerk's JWKS endpoint (RS256). Token payload carries `sub` (user_id), `email`, `username`.
 
 ### Frontend
 
-Vite + React + TypeScript with Tailwind CSS v4, React Router v7, and Recharts.
+Vite + React + TypeScript with Tailwind CSS v4, React Router v7, Recharts, and Clerk authentication. Dark terminal-style stock analysis dashboard.
 
-- **`frontend/src/main.tsx`** — Entry point, renders `<App />`
-- **`frontend/src/App.tsx`** — BrowserRouter, AuthProvider, route definitions
-- **`frontend/src/context/AuthContext.tsx`** — JWT auth state, token decode/expiry, login/logout methods
-- **`frontend/src/api/client.ts`** — Fetch wrapper with Bearer token injection
-- **`frontend/src/api/etfApi.ts`** — ETF endpoint calls (`getETF`, `getETFHistory`)
-- **`frontend/src/hooks/`** — `useETF`, `useETFHistory` (real API with mock fallback), `usePortfolio` (mock data)
-- **`frontend/src/pages/`** — `PortfolioOverview` (`/`), `Trading` (`/trading`), `Login` (`/login`)
-- **`frontend/src/components/`** — Organized by feature: `layout/`, `common/`, `portfolio/`, `trading/`
-- **`frontend/src/mocks/`** — Mock data for portfolio and ETFs (used when backend is unavailable)
+- **`frontend/src/main.tsx`** — Entry point, ClerkProvider with dark theme
+- **`frontend/src/App.tsx`** — BrowserRouter, routes: `/sign-in/*` (public), `/` (protected Dashboard)
+- **`frontend/src/api/client.ts`** — Generic `apiFetch<T>()` wrapper with Clerk token injection via `getToken()`
+- **`frontend/src/hooks/usePortfolio.ts`** — Fetches portfolio summary from `/api/v1/portfolio`
+- **`frontend/src/hooks/useETFHistory.ts`** — On-demand fetch of ETF history for detail modal
+- **`frontend/src/pages/SignInPage.tsx`** — Clerk pre-built `<SignIn />` component
+- **`frontend/src/pages/Dashboard.tsx`** — Main dashboard: portfolio summary + ETF position list + detail modal
+- **`frontend/src/components/layout/Navbar.tsx`** — App title + Clerk UserButton
+- **`frontend/src/components/portfolio/PortfolioSummary.tsx`** — 3 stat cards (total value, initial value, % change)
+- **`frontend/src/components/etf/ETFList.tsx`** — Vertical stack of ETF position rows
+- **`frontend/src/components/etf/ETFRow.tsx`** — Single ETF row: ticker, prices, risk range, penetration bar
+- **`frontend/src/components/etf/RiskBar.tsx`** — Visual risk range penetration bar (green/yellow/red)
+- **`frontend/src/components/etf/ETFDetailModal.tsx`** — Modal with Recharts sparkline (close price + risk range reference lines, ISO date x-axis)
+- **`frontend/src/types/index.ts`** — TypeScript interfaces (ETFPosition, PortfolioSummary, ETFHistoryItem, ETFHistoryResponse)
 
 **Key patterns:**
-- `ProtectedRoute` wraps authenticated routes, redirects to `/login`
-- Trading page calls real backend, falls back to mock data if API unreachable
-- Responsive: mobile-first with Tailwind `md:`/`lg:` breakpoints, hamburger menu on mobile
+- Clerk `<SignedIn>`/`<SignedOut>` components protect routes, redirect to `/sign-in`
+- Clerk `useAuth().getToken()` provides JWTs for backend API calls
+- ETF detail modal shows 2-10 trading days of history; displays "ETF does not have required history data" if < 2 days
+- Responsive: mobile-first with Tailwind `md:` breakpoints
