@@ -23,3 +23,15 @@ class PortfolioResponse(BaseModel):
     initial_value: float
     percent_change: float
     positions: List[PositionResponse]
+
+
+class UploadHoldingResponse(BaseModel):
+    ticker: str
+    quantity: float
+    cost_basis: float
+
+
+class UploadResponse(BaseModel):
+    total_value: float
+    initial_value: float
+    positions: List[UploadHoldingResponse]
