@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { apiFetch } from "../api/client";
 import type { PortfolioSummary } from "../types";
@@ -9,15 +9,18 @@ export function usePortfolio() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchPortfolio = useCallback(() => {
     setLoading(true);
+    setError(null);
     apiFetch<PortfolioSummary>("/api/v1/portfolio", getToken)
-      .then((d) => { if (!cancelled) setData(d); })
-      .catch((e) => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then(setData)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, [getToken]);
 
-  return { data, loading, error };
+  useEffect(() => {
+    fetchPortfolio();
+  }, [fetchPortfolio]);
+
+  return { data, loading, error, refetch: fetchPortfolio };
 }
