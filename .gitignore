@@ -18,3 +18,4 @@ dist/
 .idea/
 *.sw?
 .DS_Store
+.worktrees/

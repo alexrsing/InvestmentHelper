@@ -1,0 +1,43 @@
+# Environment variables (contains secrets)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+
+# Virtual environment
+venv/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime output
+output
+
+# Config files (use *.sample.json as templates)
+config/*.json
+!config/*.sample.json
+
+# Data directory (runtime data, not committed)
+data/
+# Terraform
+.terraform/
+infrastructure/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+infrastructure/.terraform.lock.hcl
+infrastructure/.current-env
+test_venv/

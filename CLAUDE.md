@@ -14,10 +14,6 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 # Backend: Run the dev server (from backend/ directory)
 cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Backend: Docker build and run
-docker build -t investment-helper .
-docker run -p 8000:8000 investment-helper
-
 # Backend: Environment setup
 cp backend/.env.example backend/.env
 # Sensitive config (Clerk keys) loaded from AWS Secrets Manager

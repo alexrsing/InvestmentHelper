@@ -1,0 +1,16 @@
+{
+  "excluded_symbols": [
+    "FZFXX",
+    "FZDXX",
+    "SPAXX",
+    "FCASH",
+    "CORE"
+  ],
+  "notes": {
+    "FZFXX": "Fidelity Government Money Market Fund",
+    "FZDXX": "Fidelity Money Market Premium Class",
+    "SPAXX": "Fidelity Government Money Market Fund",
+    "FCASH": "Fidelity Cash/Pending Activity",
+    "CORE": "Fidelity Core Position"
+  }
+}

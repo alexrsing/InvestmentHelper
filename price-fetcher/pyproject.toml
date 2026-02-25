@@ -1,0 +1,38 @@
+[project]
+name = "pricedata"
+version = "0.1.0"
+description = "DynamoDB price data client - read and write historical prices"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "David Sing"}
+]
+dependencies = [
+    "boto3>=1.26.0",
+    "pynamodb>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "moto"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pricedata*"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+# Ignore rules that conflict with code patterns in use
+ignore = ["F401"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests need to modify sys.path before imports, and may have unused vars
+"src/tests/**/*.py" = ["E402", "F401", "F841"]
+"fetchers/tests/**/*.py" = ["E402", "F401", "F841"]
+# Scripts often need path manipulation before imports
+"scripts/**/*.py" = ["E402"]

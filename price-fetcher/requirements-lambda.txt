@@ -1,0 +1,7 @@
+# Lambda-specific requirements (no yfinance/numpy/pandas)
+# For local development with yfinance, use requirements.txt instead
+
+boto3
+pynamodb
+python-dotenv
+requests
