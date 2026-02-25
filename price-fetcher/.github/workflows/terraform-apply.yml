@@ -1,0 +1,94 @@
+name: Terraform Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      confirmation:
+        description: 'Type "deploy" to confirm'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: '1.6.0'
+
+jobs:
+  validate-confirmation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        if: inputs.confirmation != 'deploy'
+        run: |
+          echo "Error: You must type 'deploy' to confirm deployment"
+          exit 1
+
+  apply:
+    needs: validate-confirmation
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set AWS region
+        id: region
+        run: |
+          case "${{ inputs.environment }}" in
+            dev)
+              echo "aws_region=us-west-2" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "aws_region=us-east-2" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "aws_region=us-east-1" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "aws_region=us-west-2" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ inputs.environment }}-price-fetcher-github-actions
+          aws-region: ${{ steps.region.outputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: infrastructure
+        run: |
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend-config.hcl
+
+      - name: Terraform Plan
+        working-directory: infrastructure
+        run: |
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: infrastructure
+        run: |
+          terraform apply -auto-approve tfplan
+
+      - name: Show Outputs
+        working-directory: infrastructure
+        run: |
+          echo "## Deployment Complete: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Outputs" >> $GITHUB_STEP_SUMMARY
+          terraform output -json | jq -r 'to_entries[] | "- **\(.key)**: \(.value.value // "N/A")"' >> $GITHUB_STEP_SUMMARY
