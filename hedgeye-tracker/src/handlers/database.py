@@ -2,11 +2,13 @@ import os
 from typing import Any, Dict, List, Optional
 
 from services.database_service import DatabaseService
+from services.etf_update_service import ETFUpdateService
 
 
 class Database:
     def __init__(self):
         self.db_service = DatabaseService()
+        self.etf_update_service = ETFUpdateService()
         self.trade_ranges_table = os.getenv(
             "TRADE_RANGES_TABLE", "hedgeye_daily_ranges"
         )
@@ -81,6 +83,9 @@ class Database:
 
             if self.save_trade_range(etf_symbol, current_data, all_history):
                 count += 1
+
+        # Update the shared etfs table with latest risk ranges
+        self.etf_update_service.update_risk_ranges(trade_ranges)
 
         return count
 
