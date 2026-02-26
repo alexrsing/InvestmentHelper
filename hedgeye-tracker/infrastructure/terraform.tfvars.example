@@ -1,0 +1,70 @@
+# Example Terraform Variables File
+#
+# Copy this file to create environment-specific configurations
+# See environments/ directory for actual environment configs
+
+environment = "dev"
+aws_region  = "us-west-2"
+
+# Table name prefix (typically environment name)
+table_name_prefix = "dev-"
+
+# Enable point-in-time recovery for data protection
+enable_point_in_time_recovery = true
+
+# Enable deletion protection (recommended for production)
+enable_deletion_protection = false
+
+# Additional resource tags
+tags = {
+  CostCenter = "development"
+  Owner      = "engineering-team"
+}
+
+# Lambda Configuration
+# Enable Lambda function deployment
+enable_lambda = false
+
+# Path to Lambda deployment package (run ./deployment/package-lambda.sh first)
+# lambda_deployment_package = "../deployment/lambda.zip"
+
+# Lambda function settings
+lambda_timeout            = 900 # 15 minutes max
+lambda_memory_size        = 512 # MB
+lambda_log_retention_days = 30  # CloudWatch Logs retention
+
+# Gmail address to impersonate for domain-wide delegation
+gmail_user_email = "shared@example.com"
+
+# Scheduler Configuration
+# Enable EventBridge scheduler (requires enable_lambda = true)
+enable_scheduler = false
+
+# Cron or rate expression for scheduled execution
+# Examples:
+#   "cron(0 8 ? * MON-FRI *)" - 8 AM UTC weekdays
+#   "cron(0 8 * * ? *)"       - 8 AM UTC daily
+#   "rate(6 hours)"           - Every 6 hours
+schedule_expression = "cron(0 8 ? * MON-FRI *)"
+
+# Whether the scheduler rule is active
+scheduler_enabled = true
+
+# Monitoring Configuration
+# Enable CloudWatch alarms and SNS topics (requires enable_lambda = true)
+enable_monitoring = false
+
+# Email address for monitoring alert notifications
+# Leave empty to skip email subscription (you can add subscriptions later)
+monitoring_alert_email = ""
+
+# GitHub OIDC Configuration
+# Enable OIDC authentication for GitHub Actions CI/CD
+enable_github_oidc = false
+
+# GitHub repository in format "owner/repo"
+github_repository = "your-org/hedgeye-risk-ranges-tracker"
+
+# Terraform state backend (for GitHub Actions policies)
+terraform_state_bucket = "your-terraform-state-bucket"
+terraform_lock_table   = "terraform-locks"

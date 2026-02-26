@@ -98,3 +98,25 @@ Vite + React + TypeScript with Tailwind CSS v4, React Router v7, Recharts, and C
 - Clerk `useAuth().getToken()` provides JWTs for backend API calls
 - ETF detail modal shows 2-10 trading days of history; displays "ETF does not have required history data" if < 2 days
 - Responsive: mobile-first with Tailwind `md:` breakpoints
+
+### Hedgeye Tracker
+
+Parses Hedgeye risk range emails from Gmail, writes to hedgeye-specific DynamoDB tables, and updates `risk_range_low`/`risk_range_high` on the shared `etfs` table via partial updates.
+
+- **`hedgeye-tracker/`** — Separate Python project at monorepo root (parallel to `price-fetcher/`, `backend/`)
+- **`hedgeye-tracker/CLAUDE.md`** — Detailed module documentation
+- **Entry points:** `lambda_handler.py` (Lambda), `src/main.py` (CLI)
+- **DynamoDB tables (own):** `hedgeye_daily_ranges`, `hedgeye_weekly_ranges`
+- **Shared table access:** Partial updates on `etfs` table (`risk_range_low`, `risk_range_high` fields only)
+- **Gmail auth:** Service account credentials in AWS Secrets Manager (`{env}/hedgeye/gmail-service-account`)
+
+```bash
+# Install dependencies
+cd hedgeye-tracker && uv sync
+
+# Run locally
+cd hedgeye-tracker/src && python main.py --skip-validation
+
+# Run tests
+cd hedgeye-tracker && python -m pytest tests/ -v
+```
