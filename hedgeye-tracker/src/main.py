@@ -12,6 +12,7 @@ from handlers.database import Database
 from handlers.gmail import Gmail
 from services.trade_range_transformer import TradeRangeTransformer
 from services.trend_range_transformer import TrendRangeTransformer
+from util.logging_config import setup_logging, get_logger
 from util.startup_validation import validate_startup
 
 # Email subject names to search for
@@ -28,6 +29,10 @@ def main():
     """
     # Parse command line arguments for --skip-validation flag
     skip_validation = "--skip-validation" in sys.argv
+
+    # Set up human-readable logging for CLI
+    setup_logging()
+    logger = get_logger(__name__)
 
     # Run startup validation before any processing
     validate_startup(skip_connectivity=skip_validation)

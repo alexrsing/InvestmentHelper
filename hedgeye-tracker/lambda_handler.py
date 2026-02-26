@@ -9,13 +9,16 @@ import os
 import sys
 
 # Ensure the src directory is in the path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+from util.logging_config import setup_logging, get_logger
+
+setup_logging()
 
 from handlers.database import Database
 from handlers.gmail import Gmail
 from services.trade_range_transformer import TradeRangeTransformer
 from services.trend_range_transformer import TrendRangeTransformer
-from util.logging_config import get_logger
 
 # Email subject names to search for
 TRADE_RANGE_GMAIL_NAME = "RISK RANGE™ SIGNALS:"
