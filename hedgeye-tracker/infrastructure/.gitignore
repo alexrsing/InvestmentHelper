@@ -1,0 +1,41 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.auto.tfvars
+*.auto.tfvars.json
+local.tfvars
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform plan files
+*.tfplan
+tfplan
+
+# Terraform module cache
+.terraform.modules/
+
+# Sensitive files
+*.pem
+*.key
+secrets.auto.tfvars
+
+# Environment tracking (local to each developer)
+.current-env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
