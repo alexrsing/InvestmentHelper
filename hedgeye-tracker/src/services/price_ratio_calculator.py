@@ -1,7 +1,7 @@
 """
 Service for calculating price ratios between source and target symbols.
 
-Fetches prices from DynamoDB (etf_monitoring_etf_prices table) which is
+Fetches prices from DynamoDB (etfs table) which is
 populated by a separate price-fetcher project.
 """
 

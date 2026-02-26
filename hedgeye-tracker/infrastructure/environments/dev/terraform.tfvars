@@ -1,7 +1,7 @@
 # Development Environment Configuration
 
 environment = "dev"
-aws_region  = "us-west-2"
+aws_region  = "us-east-1"
 
 # Use environment prefix for table names
 table_name_prefix = "dev-"

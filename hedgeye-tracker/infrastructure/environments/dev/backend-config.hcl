@@ -3,6 +3,6 @@
 
 bucket         = "hedgeye-risk-tracker-terraform-state"
 key            = "hedgeye-risk-tracker/dev/terraform.tfstate"
-region         = "us-west-2"
+region         = "us-east-1"
 encrypt        = true
 dynamodb_table = "terraform-state-lock"

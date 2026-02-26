@@ -6,6 +6,10 @@ from typing import Any, Dict, List, Optional
 import boto3
 from botocore.exceptions import ClientError
 
+from util.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class DatabaseService:
     def __init__(self, region_name: Optional[str] = None):
@@ -20,11 +24,10 @@ class DatabaseService:
             response: bool = table.put_item(Item=item)
             return response
         except ClientError as e:
-            print(f"Error putting item to {table_name}")
-            print(e)
+            logger.error("Error putting item to %s: %s", table_name, e)
             raise
         except Exception as e:
-            print(f"Unexpected error putting item to {table_name}: {str(e)}")
+            logger.error("Unexpected error putting item to %s: %s", table_name, e)
             raise
 
     def batch_put_items(self, table_name: str, items: List[Dict[str, Any]]) -> bool:
@@ -39,11 +42,10 @@ class DatabaseService:
                     batch.put_item(Item=item)
             return True
         except ClientError as e:
-            print(f"Error batch putting items to {table_name}")
-            print(e)
+            logger.error("Error batch putting items to %s: %s", table_name, e)
             raise
         except Exception as e:
-            print(f"Unexpected error batch putting items to {table_name}: {str(e)}")
+            logger.error("Unexpected error batch putting items to %s: %s", table_name, e)
             raise
 
     def get_item(self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -53,11 +55,10 @@ class DatabaseService:
             response = table.get_item(Key=key)
             return response.get("Item")
         except ClientError as e:
-            print(f"Error getting item from {table_name}")
-            print(e)
+            logger.error("Error getting item from %s: %s", table_name, e)
             raise
         except Exception as e:
-            print(f"Unexpected error getting item from {table_name}: {str(e)}")
+            logger.error("Unexpected error getting item from %s: %s", table_name, e)
             raise
 
     def save_item_with_history(
@@ -90,11 +91,10 @@ class DatabaseService:
 
             return True
         except ClientError as e:
-            print(f"Error saving item with history to {table_name}")
-            print(e)
+            logger.error("Error saving item with history to %s: %s", table_name, e)
             raise
         except Exception as e:
-            print(f"Unexpected error saving item with history to {table_name}: {str(e)}")
+            logger.error("Unexpected error saving item with history to %s: %s", table_name, e)
             raise
 
     def upsert_item_with_history(
@@ -165,9 +165,8 @@ class DatabaseService:
 
             return True
         except ClientError as e:
-            print(f"Error upserting item with history to {table_name}")
-            print(e)
+            logger.error("Error upserting item with history to %s: %s", table_name, e)
             raise
         except Exception as e:
-            print(f"Unexpected error upserting item with history to {table_name}: {str(e)}")
+            logger.error("Unexpected error upserting item with history to %s: %s", table_name, e)
             raise

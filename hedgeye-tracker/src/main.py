@@ -107,13 +107,13 @@ def main():
     print()
 
     # Save trade ranges to DynamoDB
-    print("Saving trade ranges to etf_monitoring_trade_ranges table...")
+    print("Saving trade ranges to hedgeye_daily_ranges table...")
     trade_count = database.batch_save_trade_ranges(trade_ranges)
     print(f"✓ Saved {trade_count} trade range records to DynamoDB")
     print()
 
     # Save trend ranges to DynamoDB
-    print("Saving trend ranges to etf_monitoring_trend_ranges table...")
+    print("Saving trend ranges to hedgeye_weekly_ranges table...")
     trend_count = database.batch_save_trend_ranges(trend_ranges)
     print(f"✓ Saved {trend_count} trend range records to DynamoDB")
     print()

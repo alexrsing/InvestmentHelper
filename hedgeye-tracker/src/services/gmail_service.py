@@ -14,7 +14,10 @@ from googleapiclient.errors import HttpError
 
 from services.risk_range_parser_service import RiskRangeParserService
 from services.trend_range_parser_service import TrendRangeParserService
+from util.logging_config import get_logger
 from util.secure_logging import mask_email, mask_service_account_email
+
+logger = get_logger(__name__)
 
 
 class GmailService:
@@ -41,14 +44,14 @@ class GmailService:
         client = session.client(service_name="secretsmanager", region_name=region_name)
 
         try:
-            print(f"Fetching secret from Secrets Manager: {secret_name}")
+            logger.info("Fetching secret from Secrets Manager: %s", secret_name)
             get_secret_value_response = client.get_secret_value(SecretId=secret_name)
 
             # Parse the secret string as JSON
             secret_string = get_secret_value_response["SecretString"]
             credentials_info = json.loads(secret_string)
 
-            print("✅ Successfully retrieved credentials from Secrets Manager")
+            logger.info("Successfully retrieved credentials from Secrets Manager")
             return credentials_info
 
         except ClientError as e:
@@ -87,17 +90,17 @@ class GmailService:
             # Try Secrets Manager first (preferred method)
             try:
                 credentials_info = self._get_credentials_from_secrets_manager()
-                print("✅ Loaded credentials from AWS Secrets Manager")
+                logger.info("Loaded credentials from AWS Secrets Manager")
             except Exception as secrets_error:
-                print(f"⚠️ Could not load from Secrets Manager: {secrets_error}")
+                logger.warning("Could not load from Secrets Manager: %s", secrets_error)
 
                 # Fall back to environment variable (legacy method)
                 gmail_app_details = os.getenv("GMAIL_APP_DETAILS")
                 if gmail_app_details:
-                    print("⚠️ Falling back to GMAIL_APP_DETAILS environment variable (DEPRECATED)")
+                    logger.warning("Falling back to GMAIL_APP_DETAILS environment variable (DEPRECATED)")
                     try:
                         credentials_info = json.loads(gmail_app_details)
-                        print("✅ Loaded credentials from environment variable")
+                        logger.info("Loaded credentials from environment variable")
                     except json.JSONDecodeError as e:
                         raise Exception(f"Invalid JSON in GMAIL_APP_DETAILS environment variable: {e}")
                 else:
@@ -112,24 +115,24 @@ class GmailService:
             # If user_email is provided, delegate to that user (domain-wide delegation)
             if self.user_email:
                 masked_user = mask_email(self.user_email)
-                print(f"Using domain-wide delegation to impersonate: {masked_user}")
+                logger.info("Using domain-wide delegation to impersonate: %s", masked_user)
                 credentials = credentials.with_subject(self.user_email)
             else:
-                print("No user email specified - using service account directly")
+                logger.info("No user email specified - using service account directly")
 
             # Log service account identity (masked for security)
             client_email = credentials_info.get("client_email", "")
             masked_sa_email = mask_service_account_email(client_email)
-            print(f"Service account: {masked_sa_email}")
-            print(f"Using scopes: {SCOPES}")
+            logger.info("Service account: %s", masked_sa_email)
+            logger.info("Using scopes: %s", SCOPES)
 
             # Test credential refresh
-            print("Testing credential refresh...")
+            logger.info("Testing credential refresh...")
             try:
                 credentials.refresh(Request())
-                print("✅ Credential refresh successful!")
+                logger.info("Credential refresh successful!")
             except Exception as refresh_error:
-                print(f"❌ Credential refresh failed: {refresh_error}")
+                logger.error("Credential refresh failed: %s", refresh_error)
                 raise
 
             # Build Gmail service
@@ -138,7 +141,7 @@ class GmailService:
             return service
 
         except Exception as error:
-            print(f"Authentication error: {error}")
+            logger.error("Authentication error: %s", error)
             raise
 
     def get_email_id(self, subject_filter: str) -> str:
@@ -161,7 +164,7 @@ class GmailService:
             return email_id
 
         except HttpError as error:
-            print(f"Error fetching email: {error}")
+            logger.error("Error fetching email: %s", error)
             raise
 
     def get_emails_by_subject(self, subject_keywords: List[str], max_results: int = 10) -> List[Dict[str, Any]]:
@@ -185,7 +188,7 @@ class GmailService:
             found_emails = []
 
             for keyword in subject_keywords:
-                print(f"Searching for emails with subject containing: {keyword}")
+                logger.info("Searching for emails with subject containing: %s", keyword)
 
                 # Search for emails with the subject keyword
                 result = (
@@ -224,11 +227,11 @@ class GmailService:
                         if not any(email["id"] == email_info["id"] for email in found_emails):
                             found_emails.append(email_info)
 
-            print(f"Found {len(found_emails)} unique emails")
+            logger.info("Found %d unique emails", len(found_emails))
             return found_emails
 
         except HttpError as error:
-            print(f"Error searching emails: {error}")
+            logger.error("Error searching emails: %s", error)
             raise
 
     def get_email_content(self, email_id: str) -> Dict[str, Any]:
@@ -270,7 +273,7 @@ class GmailService:
             return email_content
 
         except HttpError as error:
-            print(f"Error fetching email content: {error}")
+            logger.error("Error fetching email content: %s", error)
             raise
 
     def _extract_message_parts(self, payload: Dict[str, Any], email_content: Dict[str, Any]):
@@ -288,7 +291,7 @@ class GmailService:
                 self._extract_message_parts(part, email_content)
 
         except Exception as e:
-            print(f"Error extracting message parts: {e}")
+            logger.error("Error extracting message parts: %s", e)
 
     def _process_message_part(self, part: Dict[str, Any], email_content: Dict[str, Any]):
         """
@@ -333,7 +336,7 @@ class GmailService:
                     email_content["text_body"] += decoded_data
 
         except Exception as e:
-            print(f"Error processing message part: {e}")
+            logger.error("Error processing message part: %s", e)
 
     def process_risk_range_emails(self, max_emails: int = 5) -> List[Dict[str, Any]]:
         """
@@ -352,14 +355,14 @@ class GmailService:
             emails = self.get_emails_by_subject(risk_range_keywords, max_emails)
 
             if not emails:
-                print("No RISK RANGE emails found")
+                logger.info("No RISK RANGE emails found")
                 return []
 
             parser = RiskRangeParserService()
             all_risk_ranges = []
 
             for email_info in emails:
-                print(f"Processing email: {email_info['subject'][:50]}...")
+                logger.info("Processing email: %s...", email_info['subject'][:50])
 
                 email_content = self.get_email_content(email_info["id"])
 
@@ -373,15 +376,15 @@ class GmailService:
                         range_data["email_date"] = email_info["date"]
 
                     all_risk_ranges.extend(validated_ranges)
-                    print(f"Extracted {len(validated_ranges)} risk ranges from this email")
+                    logger.info("Extracted %d risk ranges from this email", len(validated_ranges))
                 else:
-                    print("No HTML content found in email")
+                    logger.warning("No HTML content found in email")
 
-            print(f"Total risk ranges extracted: {len(all_risk_ranges)}")
+            logger.info("Total risk ranges extracted: %d", len(all_risk_ranges))
             return all_risk_ranges
 
         except Exception as e:
-            print(f"Error processing risk range emails: {e}")
+            logger.error("Error processing risk range emails: %s", e)
             return []
 
     def process_trend_range_emails(self, max_emails: int = 5) -> List[Dict[str, Any]]:
@@ -401,14 +404,14 @@ class GmailService:
             emails = self.get_emails_by_subject(trend_range_keywords, max_emails)
 
             if not emails:
-                print("No ETF Pro Plus emails found")
+                logger.info("No ETF Pro Plus emails found")
                 return []
 
             parser = TrendRangeParserService()
             all_trend_ranges = []
 
             for email_info in emails:
-                print(f"Processing email: {email_info['subject'][:50]}...")
+                logger.info("Processing email: %s...", email_info['subject'][:50])
 
                 email_content = self.get_email_content(email_info["id"])
 
@@ -422,15 +425,15 @@ class GmailService:
                         range_data["email_date"] = email_info["date"]
 
                     all_trend_ranges.extend(validated_ranges)
-                    print(f"Extracted {len(validated_ranges)} trend ranges from this email")
+                    logger.info("Extracted %d trend ranges from this email", len(validated_ranges))
                 else:
-                    print("No HTML content found in email")
+                    logger.warning("No HTML content found in email")
 
-            print(f"Total trend ranges extracted: {len(all_trend_ranges)}")
+            logger.info("Total trend ranges extracted: %d", len(all_trend_ranges))
             return all_trend_ranges
 
         except Exception as e:
-            print(f"Error processing trend range emails: {e}")
+            logger.error("Error processing trend range emails: %s", e)
             return []
 
     def get_all_email_attachments(self, email_id: str) -> bytes:
@@ -467,7 +470,7 @@ class GmailService:
             return attachment_data
 
         except HttpError as error:
-            print(f"Error fetching email attachments: {error}")
+            logger.error("Error fetching email attachments: %s", error)
             raise
 
 
