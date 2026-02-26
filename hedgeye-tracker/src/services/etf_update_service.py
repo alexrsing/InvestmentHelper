@@ -6,9 +6,9 @@ from typing import Any, Dict, List
 from pynamodb.exceptions import DoesNotExist
 
 from models import ETF
-from util.logger import Logger
+from util.logging_config import get_logger
 
-logger = Logger(__name__)
+logger = get_logger(__name__)
 
 
 class ETFUpdateService:

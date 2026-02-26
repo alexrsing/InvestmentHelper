@@ -15,7 +15,7 @@ from handlers.database import Database
 from handlers.gmail import Gmail
 from services.trade_range_transformer import TradeRangeTransformer
 from services.trend_range_transformer import TrendRangeTransformer
-from util.logger import Logger
+from util.logging_config import get_logger
 
 # Email subject names to search for
 TRADE_RANGE_GMAIL_NAME = "RISK RANGE™ SIGNALS:"
@@ -33,7 +33,7 @@ def handler(event, context):
     Returns:
         dict: Response with status and summary
     """
-    logger = Logger("lambda_handler")
+    logger = get_logger("lambda_handler")
 
     try:
         logger.info("Starting Hedgeye Risk Ranges Tracker Lambda execution")

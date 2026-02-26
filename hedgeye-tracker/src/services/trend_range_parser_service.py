@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional
 from bs4 import BeautifulSoup
 
 from services.symbol_mapping_service import SymbolMappingService
-from util.logger import Logger
+from util.logging_config import get_logger
 
-logger = Logger(__name__)
+logger = get_logger(__name__)
 
 
 class TrendRangeParserService:

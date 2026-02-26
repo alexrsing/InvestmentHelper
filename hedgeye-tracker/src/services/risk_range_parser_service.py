@@ -10,9 +10,9 @@ from bs4 import BeautifulSoup
 from services.symbol_mapping_service import SymbolMappingService
 
 # import datetime
-from util.logger import Logger
+from util.logging_config import get_logger
 
-logger = Logger(__name__)
+logger = get_logger(__name__)
 
 
 class RiskRangeParserService:

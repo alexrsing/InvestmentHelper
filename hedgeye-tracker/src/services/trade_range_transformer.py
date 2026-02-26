@@ -8,9 +8,9 @@ from decimal import Decimal
 from typing import Any, Dict, List
 
 from services.price_ratio_calculator import PriceRatioCalculator
-from util.logger import Logger
+from util.logging_config import get_logger
 
-logger = Logger(__name__)
+logger = get_logger(__name__)
 
 
 class TradeRangeTransformer:
