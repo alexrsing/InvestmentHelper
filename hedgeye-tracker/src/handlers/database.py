@@ -7,13 +7,11 @@ from services.database_service import DatabaseService
 class Database:
     def __init__(self):
         self.db_service = DatabaseService()
-        # Use environment variables for table names, with Terraform naming convention as default
-        env = os.getenv("ENVIRONMENT", "dev")
         self.trade_ranges_table = os.getenv(
-            "TRADE_RANGES_TABLE", f"{env}-hedgeye-daily-risk-ranges"
+            "TRADE_RANGES_TABLE", "hedgeye_daily_ranges"
         )
         self.trend_ranges_table = os.getenv(
-            "TREND_RANGES_TABLE", f"{env}-hedgeye-weekly-risk-ranges"
+            "TREND_RANGES_TABLE", "hedgeye_weekly_ranges"
         )
 
     def put_security_data(self, table_name: str, item: Dict[str, Any]) -> bool:

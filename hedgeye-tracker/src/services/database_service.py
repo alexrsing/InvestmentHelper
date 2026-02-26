@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 
 class DatabaseService:
     def __init__(self, region_name: Optional[str] = None):
-        region = region_name or os.environ.get("AWS_REGION") or os.environ.get("AWS_REGION_NAME", "us-west-2")
+        region = region_name or os.environ.get("AWS_REGION") or os.environ.get("AWS_REGION_NAME", "us-east-1")
         self.dynamodb: Any = boto3.resource("dynamodb", region_name=region)
         self.client: Any = boto3.client("dynamodb", region_name=region)
 

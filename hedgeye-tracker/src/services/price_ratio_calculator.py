@@ -12,12 +12,12 @@ from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
 
-from util.logger import Logger
+from util.logging_config import get_logger
 
-logger = Logger(__name__)
+logger = get_logger(__name__)
 
 # Price table name
-PRICE_TABLE_NAME = os.getenv("PRICE_TABLE_NAME", "etf_monitoring_etf_prices")
+PRICE_TABLE_NAME = os.getenv("PRICE_TABLE_NAME", "etfs")
 
 
 class PriceRatioCalculator:
@@ -31,7 +31,7 @@ class PriceRatioCalculator:
     def dynamodb(self):
         """Lazy initialization of DynamoDB resource"""
         if self._dynamodb is None:
-            region = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-west-2")
+            region = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-east-1")
             self._dynamodb = boto3.resource("dynamodb", region_name=region)
         return self._dynamodb
 
@@ -51,7 +51,7 @@ class PriceRatioCalculator:
 
         try:
             table = self.dynamodb.Table(PRICE_TABLE_NAME)
-            response = table.get_item(Key={"etf_symbol": symbol})
+            response = table.get_item(Key={"ticker": symbol})
 
             if "Item" in response:
                 item = response["Item"]

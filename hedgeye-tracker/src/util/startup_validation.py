@@ -150,7 +150,7 @@ class StartupValidator:
 
     def _validate_aws_connectivity(self) -> None:
         """Validate AWS connectivity by checking we can make AWS API calls."""
-        region = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-west-2")
+        region = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-east-1")
 
         try:
             # Create STS client and verify credentials are valid
@@ -178,7 +178,7 @@ class StartupValidator:
     def _validate_gmail_connectivity(self) -> None:
         """Validate Gmail credentials can be retrieved from Secrets Manager."""
         secret_name = os.getenv("GMAIL_SECRET_NAME", "")
-        region = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-west-2")
+        region = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-east-1")
 
         if not secret_name:
             # Already reported in config validation

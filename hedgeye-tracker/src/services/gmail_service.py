@@ -34,7 +34,7 @@ class GmailService:
             Exception: If secret cannot be retrieved or parsed
         """
         secret_name = os.getenv("GMAIL_SECRET_NAME", "dev/hedgeye/gmail-service-account")
-        region_name = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-west-2")
+        region_name = os.getenv("AWS_REGION") or os.getenv("AWS_REGION_NAME", "us-east-1")
 
         # Create a Secrets Manager client
         session = boto3.session.Session()
