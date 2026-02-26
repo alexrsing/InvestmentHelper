@@ -4,6 +4,15 @@ interface Props {
   current: number;
 }
 
+export function getSignal(penetration: number): {
+  label: "Buy" | "Stay" | "Sell";
+  color: string;
+} {
+  if (penetration < 30) return { label: "Buy", color: "text-green-400" };
+  if (penetration > 70) return { label: "Sell", color: "text-red-400" };
+  return { label: "Stay", color: "text-blue-400" };
+}
+
 export default function RiskBar({ low, high, current }: Props) {
   const range = high - low;
   const penetration = range > 0 ? ((current - low) / range) * 100 : 0;
@@ -11,7 +20,7 @@ export default function RiskBar({ low, high, current }: Props) {
 
   let barColor = "bg-green-500";
   if (clamped > 70) barColor = "bg-red-500";
-  else if (clamped > 40) barColor = "bg-yellow-500";
+  else if (clamped >= 30) barColor = "bg-blue-500";
 
   return (
     <div className="flex items-center gap-2 min-w-[180px]">
