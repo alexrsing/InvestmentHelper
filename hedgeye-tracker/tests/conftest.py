@@ -46,6 +46,30 @@ def dynamodb_table(aws_credentials):
 
 
 @pytest.fixture
+def etf_history_table(aws_credentials):
+    """Create a mocked etf_history DynamoDB table."""
+    with mock_aws():
+        import boto3
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+
+        table = dynamodb.create_table(
+            TableName="etf_history",
+            KeySchema=[
+                {"AttributeName": "ticker", "KeyType": "HASH"},
+                {"AttributeName": "date", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "ticker", "AttributeType": "S"},
+                {"AttributeName": "date", "AttributeType": "S"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        table.wait_until_exists()
+
+        yield dynamodb
+
+
+@pytest.fixture
 def etfs_table_with_data(dynamodb_table):
     """Create etfs table with sample ETF records."""
     table = dynamodb_table.Table("etfs")

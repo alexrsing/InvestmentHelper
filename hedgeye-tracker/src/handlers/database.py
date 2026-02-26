@@ -87,6 +87,9 @@ class Database:
         # Update the shared etfs table with latest risk ranges
         self.etf_update_service.update_risk_ranges(trade_ranges)
 
+        # Update etf_history records with per-date risk ranges
+        self.etf_update_service.update_history_risk_ranges(trade_ranges)
+
         return count
 
     def batch_save_trend_ranges(self, trend_ranges: List[Dict[str, Any]]) -> int:

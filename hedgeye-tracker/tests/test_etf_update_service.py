@@ -1,4 +1,4 @@
-"""Tests for ETFUpdateService - verifies partial updates on shared etfs table."""
+"""Tests for ETFUpdateService - verifies partial updates on shared etfs and etf_history tables."""
 
 import os
 import sys
@@ -13,7 +13,7 @@ from decimal import Decimal
 class TestETFUpdateService:
     """Test ETFUpdateService partial update behavior."""
 
-    def _make_trade_range(self, ticker, low, high):
+    def _make_trade_range(self, ticker, low, high, all_history=None):
         """Helper to create a trade range dict."""
         return {
             "etf_symbol": ticker,
@@ -22,7 +22,7 @@ class TestETFUpdateService:
                 "trade_high": str(high),
                 "trend": "BULLISH",
             },
-            "all_history": [],
+            "all_history": all_history if all_history is not None else [],
         }
 
     @mock_aws
@@ -185,3 +185,126 @@ class TestETFUpdateService:
         count = service.update_risk_ranges(trade_ranges)
 
         assert count == 2
+
+
+class TestUpdateHistoryRiskRanges:
+    """Test ETFUpdateService.update_history_risk_ranges() partial update behavior."""
+
+    def _create_etf_history_table(self, dynamodb):
+        """Helper to create the etf_history table."""
+        table = dynamodb.create_table(
+            TableName="etf_history",
+            KeySchema=[
+                {"AttributeName": "ticker", "KeyType": "HASH"},
+                {"AttributeName": "date", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "ticker", "AttributeType": "S"},
+                {"AttributeName": "date", "AttributeType": "S"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        table.wait_until_exists()
+        return table
+
+    @mock_aws
+    def test_updates_risk_ranges_on_existing_history_record(self):
+        """Updates risk_range_low/high on an existing etf_history record, preserving other fields."""
+        import boto3
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = self._create_etf_history_table(dynamodb)
+
+        # Pre-populate with an etf_history record (as price-fetcher would)
+        table.put_item(Item={
+            "ticker": "SPY",
+            "date": "2025-10-15",
+            "open_price": Decimal("448.50"),
+            "close_price": Decimal("450.00"),
+            "high_price": Decimal("451.00"),
+            "low_price": Decimal("447.00"),
+            "volume": Decimal("50000000"),
+        })
+
+        from services.etf_update_service import ETFUpdateService
+        service = ETFUpdateService()
+
+        trade_ranges = [{
+            "etf_symbol": "SPY",
+            "current_data": {"trade_low": "445.0", "trade_high": "455.0"},
+            "all_history": [
+                {"timestamp": "2025-10-15T07:43:03-04:00", "range": [Decimal("445.0"), Decimal("455.0")]},
+            ],
+        }]
+        count = service.update_history_risk_ranges(trade_ranges)
+
+        assert count == 1
+
+        # Verify risk ranges were set
+        response = table.get_item(Key={"ticker": "SPY", "date": "2025-10-15"})
+        item = response["Item"]
+        assert float(item["risk_range_low"]) == 445.0
+        assert float(item["risk_range_high"]) == 455.0
+
+        # Verify OHLCV fields were preserved
+        assert float(item["open_price"]) == 448.50
+        assert float(item["close_price"]) == 450.00
+        assert float(item["volume"]) == 50000000
+
+    @mock_aws
+    def test_skips_dates_without_history_record(self):
+        """Skips dates where no etf_history record exists (doesn't crash)."""
+        import boto3
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        self._create_etf_history_table(dynamodb)
+
+        from services.etf_update_service import ETFUpdateService
+        service = ETFUpdateService()
+
+        trade_ranges = [{
+            "etf_symbol": "SPY",
+            "current_data": {"trade_low": "445.0", "trade_high": "455.0"},
+            "all_history": [
+                {"timestamp": "2025-10-15T07:43:03-04:00", "range": [Decimal("445.0"), Decimal("455.0")]},
+            ],
+        }]
+        count = service.update_history_risk_ranges(trade_ranges)
+
+        assert count == 0
+
+    @mock_aws
+    def test_returns_correct_count_across_multiple_tickers(self):
+        """Returns correct count when updating multiple tickers and dates."""
+        import boto3
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = self._create_etf_history_table(dynamodb)
+
+        # Add history records for two tickers
+        table.put_item(Item={"ticker": "SPY", "date": "2025-10-15"})
+        table.put_item(Item={"ticker": "SPY", "date": "2025-10-14"})
+        table.put_item(Item={"ticker": "QQQ", "date": "2025-10-15"})
+
+        from services.etf_update_service import ETFUpdateService
+        service = ETFUpdateService()
+
+        trade_ranges = [
+            {
+                "etf_symbol": "SPY",
+                "current_data": {"trade_low": "445.0", "trade_high": "455.0"},
+                "all_history": [
+                    {"timestamp": "2025-10-15T07:43:03-04:00", "range": [Decimal("445.0"), Decimal("455.0")]},
+                    {"timestamp": "2025-10-14T07:43:03-04:00", "range": [Decimal("444.0"), Decimal("454.0")]},
+                    {"timestamp": "2025-10-13T07:43:03-04:00", "range": [Decimal("443.0"), Decimal("453.0")]},  # No record
+                ],
+            },
+            {
+                "etf_symbol": "QQQ",
+                "current_data": {"trade_low": "375.0", "trade_high": "385.0"},
+                "all_history": [
+                    {"timestamp": "2025-10-15T07:43:03-04:00", "range": [Decimal("375.0"), Decimal("385.0")]},
+                ],
+            },
+        ]
+        count = service.update_history_risk_ranges(trade_ranges)
+
+        # SPY: 2 dates matched, 1 skipped. QQQ: 1 date matched.
+        assert count == 3

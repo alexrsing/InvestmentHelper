@@ -15,7 +15,7 @@ export function useETFHistory() {
       setError(null);
       setData(null);
       apiFetch<ETFHistoryResponse>(
-        `/api/v1/etfs/${ticker}/history?limit=10`,
+        `/api/v1/etfs/${ticker}/history?limit=30`,
         getToken
       )
         .then(setData)

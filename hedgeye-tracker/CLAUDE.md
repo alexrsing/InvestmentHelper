@@ -70,7 +70,7 @@ risk_range_low/_high
 | Table | Owner | Access |
 |-------|-------|--------|
 | `etfs` | price-fetcher | hedgeye-tracker updates `risk_range_low`/`risk_range_high` only (partial update) |
-| `etf_history` | price-fetcher | hedgeye-tracker reads only |
+| `etf_history` | price-fetcher | hedgeye-tracker updates `risk_range_low`/`risk_range_high` (partial update) |
 | `hedgeye_daily_ranges` | hedgeye-tracker | Full read/write — daily trade range history |
 | `hedgeye_weekly_ranges` | hedgeye-tracker | Full read/write — weekly trend range history |
 
