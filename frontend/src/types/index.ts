@@ -32,3 +32,7 @@ export interface ETFHistoryResponse {
   history: ETFHistoryItem[];
   total_records: number;
 }
+
+export interface TradingRules {
+  max_position_pct: number;
+}
