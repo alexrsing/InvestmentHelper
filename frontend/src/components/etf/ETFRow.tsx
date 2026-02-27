@@ -1,11 +1,21 @@
 import type { ETFPosition } from "../../types";
-import RiskBar, { getSignal } from "./RiskBar";
+import RiskBar from "./RiskBar";
 
 interface Props {
   position: ETFPosition;
   onClick: (ticker: string) => void;
   totalValue: number;
   maxPositionPct: number | null;
+}
+
+function getRecommendationColor(rec: string): string {
+  switch (rec) {
+    case "Buy": return "text-green-400";
+    case "Sell": return "text-red-400";
+    case "Hold": return "text-yellow-400";
+    case "Stay": return "text-blue-400";
+    default: return "text-gray-400";
+  }
 }
 
 export default function ETFRow({ position, onClick, totalValue, maxPositionPct }: Props) {
@@ -16,6 +26,7 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct }
     open_price,
     risk_range_low,
     risk_range_high,
+    recommendation,
   } = position;
 
   const fmt = (v: number | null) =>
@@ -108,27 +119,11 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct }
         <div className="md:w-48 shrink-0">
           <div className="text-xs uppercase mb-1">
             <span className="text-gray-500">Penetration</span>
-            {risk_range_low != null &&
-              risk_range_high != null &&
-              current_price != null &&
-              risk_range_high - risk_range_low > 0 && (() => {
-                const pen = Math.max(0, Math.min(100,
-                  ((current_price - risk_range_low) / (risk_range_high - risk_range_low)) * 100
-                ));
-                const signal = getSignal(pen);
-                return (
-                  <>
-                    <span className={`${signal.color} font-bold`}>
-                      {" · "}{signal.label}
-                    </span>
-                    {isMaxSize && signal.label === "Buy" && (
-                      <span className="text-yellow-400 font-bold">
-                        {" \u26A0 Max Size"}
-                      </span>
-                    )}
-                  </>
-                );
-              })()}
+            {recommendation && (
+              <span className={`${getRecommendationColor(recommendation)} font-bold`}>
+                {" · "}{recommendation}
+              </span>
+            )}
           </div>
           {risk_range_low != null &&
           risk_range_high != null &&
