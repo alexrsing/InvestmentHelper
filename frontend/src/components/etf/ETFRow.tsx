@@ -4,9 +4,11 @@ import RiskBar, { getSignal } from "./RiskBar";
 interface Props {
   position: ETFPosition;
   onClick: (ticker: string) => void;
+  totalValue: number;
+  maxPositionPct: number | null;
 }
 
-export default function ETFRow({ position, onClick }: Props) {
+export default function ETFRow({ position, onClick, totalValue, maxPositionPct }: Props) {
   const {
     ticker,
     name,
@@ -27,6 +29,19 @@ export default function ETFRow({ position, onClick }: Props) {
       : null;
   const changeColor =
     priceChange != null && priceChange >= 0 ? "text-green-400" : "text-red-400";
+
+  const positionValue =
+    current_price != null ? position.shares * current_price : null;
+
+  const positionWeight =
+    positionValue != null && totalValue > 0
+      ? (positionValue / totalValue) * 100
+      : null;
+
+  const isMaxSize =
+    positionWeight != null &&
+    maxPositionPct != null &&
+    positionWeight >= maxPositionPct;
 
   return (
     <button
@@ -69,6 +84,24 @@ export default function ETFRow({ position, onClick }: Props) {
               {fmt(risk_range_high)}
             </div>
           </div>
+          <div>
+            <div className="text-xs text-gray-500 uppercase">Shares</div>
+            <div className="font-mono text-gray-300">
+              {position.shares}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 uppercase">Value</div>
+            <div className="font-mono text-gray-300">
+              {positionValue != null ? fmt(positionValue) : "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 uppercase">Weight</div>
+            <div className={`font-mono ${isMaxSize ? "text-yellow-400" : "text-gray-300"}`}>
+              {positionWeight != null ? `${positionWeight.toFixed(1)}%` : "—"}
+            </div>
+          </div>
         </div>
 
         {/* Risk Bar */}
@@ -84,9 +117,16 @@ export default function ETFRow({ position, onClick }: Props) {
                 ));
                 const signal = getSignal(pen);
                 return (
-                  <span className={`${signal.color} font-bold`}>
-                    {" · "}{signal.label}
-                  </span>
+                  <>
+                    <span className={`${signal.color} font-bold`}>
+                      {" · "}{signal.label}
+                    </span>
+                    {isMaxSize && signal.label === "Buy" && (
+                      <span className="text-yellow-400 font-bold">
+                        {" \u26A0 Max Size"}
+                      </span>
+                    )}
+                  </>
                 );
               })()}
           </div>
