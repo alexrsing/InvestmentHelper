@@ -3,7 +3,7 @@ from pynamodb.exceptions import DoesNotExist
 from datetime import datetime, timezone
 
 from app.core.dependencies import get_current_active_user
-from app.models.trading_rules import TradingRules
+from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT
 from app.schemas.trading_rules import TradingRulesResponse, TradingRulesUpdate
 from app.schemas.etf import ErrorResponse
 
@@ -25,10 +25,7 @@ async def get_trading_rules(current_user: dict = Depends(get_current_active_user
         rules = TradingRules.get(user_id)
         return TradingRulesResponse(max_position_pct=float(rules.max_position_pct))
     except DoesNotExist:
-        # Create default rules for new users
-        rules = TradingRules(user_id=user_id, max_position_pct=2.5)
-        rules.save()
-        return TradingRulesResponse(max_position_pct=2.5)
+        return TradingRulesResponse(max_position_pct=DEFAULT_MAX_POSITION_PCT)
     except Exception as e:
         print(f"Error fetching trading rules for {user_id}: {e}")
         raise HTTPException(
@@ -45,12 +42,22 @@ async def update_trading_rules(
     user_id = current_user["user_id"]
 
     try:
-        try:
-            rules = TradingRules.get(user_id)
+        rules = TradingRules.get(user_id)
+    except DoesNotExist:
+        rules = None
+    except Exception as e:
+        print(f"Error fetching trading rules for {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching trading rules",
+        )
+
+    try:
+        if rules:
             rules.max_position_pct = update.max_position_pct
             rules.updated_at = datetime.now(timezone.utc)
             rules.save()
-        except DoesNotExist:
+        else:
             rules = TradingRules(
                 user_id=user_id,
                 max_position_pct=update.max_position_pct,
@@ -58,8 +65,6 @@ async def update_trading_rules(
             rules.save()
 
         return TradingRulesResponse(max_position_pct=update.max_position_pct)
-    except HTTPException:
-        raise
     except Exception as e:
         print(f"Error updating trading rules for {user_id}: {e}")
         raise HTTPException(
