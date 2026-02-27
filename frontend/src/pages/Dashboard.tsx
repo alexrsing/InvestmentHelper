@@ -6,6 +6,7 @@ import ETFList from "../components/etf/ETFList";
 import ETFDetailModal from "../components/etf/ETFDetailModal";
 import { usePortfolio } from "../hooks/usePortfolio";
 import { useETFHistory } from "../hooks/useETFHistory";
+import { useTradingRules } from "../hooks/useTradingRules";
 import { apiUpload } from "../api/client";
 
 export default function Dashboard() {
@@ -17,6 +18,7 @@ export default function Dashboard() {
     error: historyError,
     fetchHistory,
   } = useETFHistory();
+  const { rules: tradingRules } = useTradingRules();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -108,6 +110,8 @@ export default function Dashboard() {
             <ETFList
               positions={portfolio.positions}
               onSelectETF={handleSelectETF}
+              totalValue={portfolio.total_value}
+              maxPositionPct={tradingRules?.max_position_pct ?? null}
             />
           </>
         )}

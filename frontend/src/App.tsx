@@ -6,6 +6,7 @@ import {
 } from "@clerk/clerk-react";
 import SignInPage from "./pages/SignInPage";
 import Dashboard from "./pages/Dashboard";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   return (
@@ -18,6 +19,19 @@ export default function App() {
             <>
               <SignedIn>
                 <Dashboard />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <>
+              <SignedIn>
+                <SettingsPage />
               </SignedIn>
               <SignedOut>
                 <RedirectToSignIn />
