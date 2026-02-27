@@ -6,6 +6,7 @@ export interface ETFPosition {
   risk_range_low: number | null;
   risk_range_high: number | null;
   shares: number;
+  recommendation: string | null;
 }
 
 export interface PortfolioSummary {

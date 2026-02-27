@@ -16,6 +16,7 @@ class PositionResponse(BaseModel):
     risk_range_low: Optional[float] = None
     risk_range_high: Optional[float] = None
     shares: float
+    recommendation: Optional[str] = None
 
 
 class PortfolioResponse(BaseModel):
