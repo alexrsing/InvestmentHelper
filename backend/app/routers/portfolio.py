@@ -8,6 +8,8 @@ from app.models.etf import ETF
 from app.schemas.portfolio import PortfolioResponse, PositionResponse, UploadResponse, UploadHoldingResponse
 from app.schemas.etf import ErrorResponse
 from app.services.csv_service import parse_fidelity_csv
+from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT
+from app.services.recommendation_service import compute_recommendation
 
 router = APIRouter(
     prefix="/portfolio",
@@ -72,6 +74,34 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
                     ticker=holding.ticker,
                     shares=holding.shares,
                 )
+            )
+
+    # Fetch trading rules for position sizing
+    try:
+        rules = TradingRules.get(user_id)
+        max_position_pct = float(rules.max_position_pct)
+    except DoesNotExist:
+        max_position_pct = DEFAULT_MAX_POSITION_PCT
+    except Exception:
+        max_position_pct = DEFAULT_MAX_POSITION_PCT
+
+    # Compute recommendations
+    for pos in positions:
+        if (
+            pos.current_price is not None
+            and pos.risk_range_low is not None
+            and pos.risk_range_high is not None
+            and pos.risk_range_high - pos.risk_range_low > 0
+            and total_value > 0
+        ):
+            position_value = pos.current_price * pos.shares
+            position_weight = (position_value / total_value) * 100
+            pos.recommendation = compute_recommendation(
+                current_price=pos.current_price,
+                risk_range_low=pos.risk_range_low,
+                risk_range_high=pos.risk_range_high,
+                position_weight=position_weight,
+                max_position_pct=max_position_pct,
             )
 
     initial_value = portfolio.initial_value or 0
