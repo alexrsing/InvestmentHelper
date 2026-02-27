@@ -82,7 +82,8 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
         max_position_pct = float(rules.max_position_pct)
     except DoesNotExist:
         max_position_pct = DEFAULT_MAX_POSITION_PCT
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching trading rules for {user_id}: {e}")
         max_position_pct = DEFAULT_MAX_POSITION_PCT
 
     # Compute recommendations
