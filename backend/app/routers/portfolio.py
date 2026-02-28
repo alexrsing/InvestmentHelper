@@ -7,10 +7,12 @@ from app.models.portfolio import Portfolio, HoldingMap
 from app.models.etf import ETF
 from app.schemas.portfolio import PortfolioResponse, PositionResponse, RecommendationResponse, ResearchResponse, UploadResponse, UploadHoldingResponse, CashUpdateRequest, CashUpdateResponse
 from app.schemas.etf import ErrorResponse
+from app.schemas.trade import TradeRequest, TradeResponse, TradeHistoryResponse, TradeHistoryItem, DecisionStatusResponse
 from app.services.csv_service import parse_fidelity_csv
 from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT, DEFAULT_MIN_POSITION_PCT
 from app.services.recommendation_service import compute_recommendation, PositionRecommendation, apply_cash_cap
 from app.services.research.research_service import get_cached_research
+from app.services.trade_service import execute_trade, get_todays_decisions, get_trade_history
 from app.core.config import settings
 
 router = APIRouter(
@@ -143,6 +145,20 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
                 researched_at=r["researched_at"],
             )
 
+    # Attach today's trade decisions
+    try:
+        decisions = get_todays_decisions(user_id)
+        for pos in positions:
+            if pos.ticker in decisions:
+                d = decisions[pos.ticker]
+                pos.decision_status = DecisionStatusResponse(
+                    action=d.action,
+                    shares=float(d.shares),
+                    date=d.date,
+                )
+    except Exception as e:
+        print(f"Error fetching trade decisions for {user_id}: {e}")
+
     initial_value = portfolio.initial_value or 0
     percent_change = (
         ((total_value - initial_value) / initial_value * 100)
@@ -269,3 +285,85 @@ async def update_cash(
     portfolio.save()
 
     return CashUpdateResponse(cash_balance=new_cash)
+
+
+@router.post("/trade", response_model=TradeResponse)
+async def submit_trade(
+    request: TradeRequest,
+    current_user: dict = Depends(get_current_active_user),
+):
+    user_id = current_user["user_id"]
+
+    try:
+        decision = execute_trade(
+            user_id=user_id,
+            ticker=request.ticker,
+            signal=request.signal,
+            action=request.action,
+            shares=request.shares,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+    except DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Portfolio or ETF not found",
+        )
+    except Exception as e:
+        print(f"Error executing trade for {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while executing trade",
+        )
+
+    return TradeResponse(
+        ticker=decision.ticker,
+        signal=decision.signal,
+        action=decision.action,
+        shares=float(decision.shares),
+        price=float(decision.price),
+        position_before=float(decision.position_before),
+        position_after=float(decision.position_after),
+        cash_before=float(decision.cash_before),
+        cash_after=float(decision.cash_after),
+        date=decision.date,
+        created_at=decision.created_at,
+    )
+
+
+@router.get("/trades", response_model=TradeHistoryResponse)
+async def list_trades(
+    current_user: dict = Depends(get_current_active_user),
+):
+    user_id = current_user["user_id"]
+
+    try:
+        decisions = get_trade_history(user_id)
+    except Exception as e:
+        print(f"Error fetching trade history for {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching trade history",
+        )
+
+    return TradeHistoryResponse(
+        trades=[
+            TradeHistoryItem(
+                ticker=d.ticker,
+                signal=d.signal,
+                action=d.action,
+                shares=float(d.shares),
+                price=float(d.price),
+                position_before=float(d.position_before),
+                position_after=float(d.position_after),
+                cash_before=float(d.cash_before),
+                cash_after=float(d.cash_after),
+                date=d.date,
+                created_at=d.created_at,
+            )
+            for d in decisions
+        ]
+    )

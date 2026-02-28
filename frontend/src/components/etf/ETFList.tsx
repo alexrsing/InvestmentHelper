@@ -1,4 +1,4 @@
-import type { ETFPosition } from "../../types";
+import type { ETFPosition, TradeRequest } from "../../types";
 import ETFRow from "./ETFRow";
 
 interface Props {
@@ -7,9 +7,12 @@ interface Props {
   totalValue: number;
   maxPositionPct: number | null;
   minPositionPct: number | null;
+  cashBalance: number;
+  onTrade: (request: TradeRequest) => Promise<void>;
+  submittingTicker: string | null;
 }
 
-export default function ETFList({ positions, onSelectETF, totalValue, maxPositionPct, minPositionPct }: Props) {
+export default function ETFList({ positions, onSelectETF, totalValue, maxPositionPct, minPositionPct, cashBalance, onTrade, submittingTicker }: Props) {
   if (positions.length === 0) {
     return (
       <div className="text-gray-500 font-mono text-center py-8">
@@ -28,6 +31,9 @@ export default function ETFList({ positions, onSelectETF, totalValue, maxPositio
           totalValue={totalValue}
           maxPositionPct={maxPositionPct}
           minPositionPct={minPositionPct}
+          cashBalance={cashBalance}
+          onTrade={onTrade}
+          submitting={submittingTicker === pos.ticker}
         />
       ))}
     </div>

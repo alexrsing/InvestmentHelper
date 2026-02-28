@@ -11,6 +11,12 @@ export default function Navbar() {
       </div>
       <div className="flex items-center gap-4">
         <Link
+          to="/trades"
+          className="text-gray-500 hover:text-gray-300 transition-colors text-sm font-mono"
+        >
+          Trades
+        </Link>
+        <Link
           to="/settings"
           className="text-gray-500 hover:text-gray-300 transition-colors text-sm font-mono"
         >

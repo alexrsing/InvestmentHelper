@@ -7,6 +7,7 @@ import {
 import SignInPage from "./pages/SignInPage";
 import Dashboard from "./pages/Dashboard";
 import SettingsPage from "./pages/SettingsPage";
+import TradeHistoryPage from "./pages/TradeHistoryPage";
 
 export default function App() {
   return (
@@ -32,6 +33,19 @@ export default function App() {
             <>
               <SignedIn>
                 <SettingsPage />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+        <Route
+          path="/trades"
+          element={
+            <>
+              <SignedIn>
+                <TradeHistoryPage />
               </SignedIn>
               <SignedOut>
                 <RedirectToSignIn />

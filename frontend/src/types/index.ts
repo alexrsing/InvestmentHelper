@@ -12,6 +12,12 @@ export interface Research {
   researched_at: string;
 }
 
+export interface DecisionStatus {
+  action: string;
+  shares: number;
+  date: string;
+}
+
 export interface ETFPosition {
   ticker: string;
   name: string | null;
@@ -22,6 +28,7 @@ export interface ETFPosition {
   shares: number;
   recommendation: Recommendation | null;
   research: Research | null;
+  decision_status: DecisionStatus | null;
 }
 
 export interface PortfolioSummary {
@@ -53,4 +60,43 @@ export interface ETFHistoryResponse {
 export interface TradingRules {
   max_position_pct: number;
   min_position_pct: number;
+}
+
+export interface TradeRequest {
+  ticker: string;
+  action: "accepted" | "declined";
+  shares: number;
+  signal: "Buy" | "Sell";
+}
+
+export interface TradeResponse {
+  ticker: string;
+  signal: string;
+  action: string;
+  shares: number;
+  price: number;
+  position_before: number;
+  position_after: number;
+  cash_before: number;
+  cash_after: number;
+  date: string;
+  created_at: string;
+}
+
+export interface TradeHistoryItem {
+  ticker: string;
+  signal: string;
+  action: string;
+  shares: number;
+  price: number;
+  position_before: number;
+  position_after: number;
+  cash_before: number;
+  cash_after: number;
+  date: string;
+  created_at: string;
+}
+
+export interface TradeHistoryResponse {
+  trades: TradeHistoryItem[];
 }
