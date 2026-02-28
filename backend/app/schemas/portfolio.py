@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field
+from typing import List, Literal, Optional
 
 
 class HoldingResponse(BaseModel):
@@ -52,8 +52,8 @@ class UploadHoldingResponse(BaseModel):
 
 
 class CashUpdateRequest(BaseModel):
-    action: str  # "deposit" or "withdraw"
-    amount: float  # positive number
+    action: Literal["deposit", "withdraw"]
+    amount: float = Field(gt=0)
 
 
 class CashUpdateResponse(BaseModel):

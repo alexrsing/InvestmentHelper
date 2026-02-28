@@ -111,13 +111,6 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
                 max_position_pct=max_position_pct,
                 min_position_pct=min_position_pct,
             )
-            pos.recommendation = RecommendationResponse(
-                signal=rec.signal,
-                shares_to_trade=rec.shares_to_trade,
-                target_position_value=rec.target_position_value,
-                current_position_value=rec.current_position_value,
-                penetration_depth=rec.penetration_depth,
-            )
             position_recs.append(PositionRecommendation(
                 ticker=pos.ticker,
                 current_price=pos.current_price,
@@ -249,18 +242,6 @@ async def update_cash(
     current_user: dict = Depends(get_current_active_user),
 ):
     user_id = current_user["user_id"]
-
-    if request.action not in ("deposit", "withdraw"):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Action must be 'deposit' or 'withdraw'",
-        )
-
-    if request.amount <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Amount must be greater than 0",
-        )
 
     try:
         portfolio = Portfolio.get(user_id)
