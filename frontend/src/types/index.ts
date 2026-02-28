@@ -36,4 +36,5 @@ export interface ETFHistoryResponse {
 
 export interface TradingRules {
   max_position_pct: number;
+  min_position_pct: number;
 }

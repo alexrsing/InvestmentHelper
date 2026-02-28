@@ -6,9 +6,10 @@ interface Props {
   onSelectETF: (ticker: string) => void;
   totalValue: number;
   maxPositionPct: number | null;
+  minPositionPct: number | null;
 }
 
-export default function ETFList({ positions, onSelectETF, totalValue, maxPositionPct }: Props) {
+export default function ETFList({ positions, onSelectETF, totalValue, maxPositionPct, minPositionPct }: Props) {
   if (positions.length === 0) {
     return (
       <div className="text-gray-500 font-mono text-center py-8">
@@ -26,6 +27,7 @@ export default function ETFList({ positions, onSelectETF, totalValue, maxPositio
           onClick={onSelectETF}
           totalValue={totalValue}
           maxPositionPct={maxPositionPct}
+          minPositionPct={minPositionPct}
         />
       ))}
     </div>

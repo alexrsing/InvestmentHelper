@@ -6,6 +6,7 @@ interface Props {
   onClick: (ticker: string) => void;
   totalValue: number;
   maxPositionPct: number | null;
+  minPositionPct: number | null;
 }
 
 function getRecommendationColor(rec: string): string {
@@ -18,7 +19,7 @@ function getRecommendationColor(rec: string): string {
   }
 }
 
-export default function ETFRow({ position, onClick, totalValue, maxPositionPct }: Props) {
+export default function ETFRow({ position, onClick, totalValue, maxPositionPct, minPositionPct }: Props) {
   const {
     ticker,
     name,
@@ -53,6 +54,12 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct }
     positionWeight != null &&
     maxPositionPct != null &&
     positionWeight >= maxPositionPct;
+
+  const isMinSize =
+    positionWeight != null &&
+    minPositionPct != null &&
+    minPositionPct > 0 &&
+    positionWeight < minPositionPct;
 
   return (
     <button
@@ -109,7 +116,7 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct }
           </div>
           <div>
             <div className="text-xs text-gray-500 uppercase">Weight</div>
-            <div className={`font-mono ${isMaxSize ? "text-yellow-400" : "text-gray-300"}`}>
+            <div className={`font-mono ${isMaxSize ? "text-yellow-400" : isMinSize ? "text-orange-400" : "text-gray-300"}`}>
               {positionWeight != null ? `${positionWeight.toFixed(1)}%` : "—"}
             </div>
           </div>

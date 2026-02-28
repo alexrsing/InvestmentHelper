@@ -112,6 +112,7 @@ export default function Dashboard() {
               onSelectETF={handleSelectETF}
               totalValue={portfolio.total_value}
               maxPositionPct={tradingRules?.max_position_pct ?? null}
+              minPositionPct={tradingRules?.min_position_pct ?? null}
             />
           </>
         )}
