@@ -7,6 +7,7 @@ import ETFDetailModal from "../components/etf/ETFDetailModal";
 import { usePortfolio } from "../hooks/usePortfolio";
 import { useETFHistory } from "../hooks/useETFHistory";
 import { useTradingRules } from "../hooks/useTradingRules";
+import { useResearch } from "../hooks/useResearch";
 import { apiUpload } from "../api/client";
 
 export default function Dashboard() {
@@ -19,6 +20,7 @@ export default function Dashboard() {
     fetchHistory,
   } = useETFHistory();
   const { rules: tradingRules } = useTradingRules();
+  const { researching, error: researchError, triggerResearch } = useResearch();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -35,6 +37,11 @@ export default function Dashboard() {
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleResearch = async () => {
+    await triggerResearch();
+    refetch();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +71,19 @@ export default function Dashboard() {
             Portfolio
           </h1>
           <div className="flex items-center gap-3">
+            {researchError && (
+              <span className="text-red-400 text-xs font-mono">
+                {researchError}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleResearch}
+              disabled={researching || loading}
+              className="px-3 py-1.5 border border-gray-700 rounded text-xs font-mono text-gray-300 hover:text-blue-400 hover:border-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {researching ? "SEARCHING..." : "SEARCH FOR DATA"}
+            </button>
             {uploadError && (
               <span className="text-red-400 text-xs font-mono">
                 {uploadError}

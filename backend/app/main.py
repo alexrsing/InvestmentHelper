@@ -10,6 +10,7 @@ from app.core.middleware import (
 )
 from app.routers import etfs
 from app.routers import portfolio
+from app.routers import research
 from app.routers import trading_rules
 
 
@@ -49,6 +50,10 @@ app.include_router(
 )
 app.include_router(
     portfolio.router,
+    prefix=settings.API_V1_STR,
+)
+app.include_router(
+    research.router,
     prefix=settings.API_V1_STR,
 )
 app.include_router(

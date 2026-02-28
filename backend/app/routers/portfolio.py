@@ -5,11 +5,13 @@ from datetime import datetime, timezone
 from app.core.dependencies import get_current_active_user
 from app.models.portfolio import Portfolio, HoldingMap
 from app.models.etf import ETF
-from app.schemas.portfolio import PortfolioResponse, PositionResponse, RecommendationResponse, UploadResponse, UploadHoldingResponse
+from app.schemas.portfolio import PortfolioResponse, PositionResponse, RecommendationResponse, ResearchResponse, UploadResponse, UploadHoldingResponse
 from app.schemas.etf import ErrorResponse
 from app.services.csv_service import parse_fidelity_csv
 from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT, DEFAULT_MIN_POSITION_PCT
 from app.services.recommendation_service import compute_recommendation
+from app.services.research.research_service import get_cached_research
+from app.core.config import settings
 
 router = APIRouter(
     prefix="/portfolio",
@@ -114,6 +116,17 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
                 target_position_value=rec.target_position_value,
                 current_position_value=rec.current_position_value,
                 penetration_depth=rec.penetration_depth,
+            )
+
+    # Attach cached research
+    cached = get_cached_research(user_id, settings.RESEARCH_EXPIRY_HOURS)
+    for pos in positions:
+        if pos.ticker in cached:
+            r = cached[pos.ticker]
+            pos.research = ResearchResponse(
+                sentiment=r["sentiment"],
+                summary=r["summary"],
+                researched_at=r["researched_at"],
             )
 
     initial_value = portfolio.initial_value or 0

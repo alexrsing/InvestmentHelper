@@ -6,6 +6,12 @@ export interface Recommendation {
   penetration_depth: number;
 }
 
+export interface Research {
+  sentiment: string;
+  summary: string;
+  researched_at: string;
+}
+
 export interface ETFPosition {
   ticker: string;
   name: string | null;
@@ -15,6 +21,7 @@ export interface ETFPosition {
   risk_range_high: number | null;
   shares: number;
   recommendation: Recommendation | null;
+  research: Research | null;
 }
 
 export interface PortfolioSummary {

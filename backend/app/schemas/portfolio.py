@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -16,6 +18,13 @@ class RecommendationResponse(BaseModel):
     penetration_depth: float
 
 
+class ResearchResponse(BaseModel):
+    ticker: Optional[str] = None
+    sentiment: str
+    summary: str
+    researched_at: datetime
+
+
 class PositionResponse(BaseModel):
     ticker: str
     name: Optional[str] = None
@@ -25,6 +34,7 @@ class PositionResponse(BaseModel):
     risk_range_high: Optional[float] = None
     shares: float
     recommendation: Optional[RecommendationResponse] = None
+    research: Optional[ResearchResponse] = None
 
 
 class PortfolioResponse(BaseModel):
