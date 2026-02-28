@@ -13,7 +13,7 @@ export default function PortfolioSummary({ data }: Props) {
     v.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div className="border border-gray-800 rounded p-4 bg-[#161b22]">
         <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
           Total Value
@@ -33,6 +33,12 @@ export default function PortfolioSummary({ data }: Props) {
         <div className={`text-xl font-mono ${changeColor}`}>
           {sign}{data.percent_change.toFixed(2)}%
         </div>
+      </div>
+      <div className="border border-gray-800 rounded p-4 bg-[#161b22]">
+        <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+          Cash
+        </div>
+        <div className="text-xl font-mono text-blue-400">{fmt(data.cash_balance)}</div>
       </div>
     </div>
   );

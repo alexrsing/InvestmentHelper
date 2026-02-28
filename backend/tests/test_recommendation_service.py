@@ -1,5 +1,10 @@
 import pytest
-from app.services.recommendation_service import compute_recommendation, Recommendation
+from app.services.recommendation_service import (
+    compute_recommendation,
+    Recommendation,
+    PositionRecommendation,
+    apply_cash_cap,
+)
 
 
 PORTFOLIO_VALUE = 10000.0
@@ -283,3 +288,141 @@ def test_zero_range_size_returns_hold():
     )
     assert result.signal == "Hold"
     assert result.shares_to_trade == 0
+
+
+# --- Cash capping tests ---
+
+
+def _rec(ticker, signal, shares_to_trade, current_price, target_value, current_value, depth=0.5):
+    return PositionRecommendation(
+        ticker=ticker,
+        current_price=current_price,
+        recommendation=Recommendation(
+            signal=signal,
+            shares_to_trade=shares_to_trade,
+            target_position_value=target_value,
+            current_position_value=current_value,
+            penetration_depth=depth,
+        ),
+    )
+
+
+def test_no_buys_returns_unchanged():
+    recs = [
+        _rec("A", "Hold", 0, 100.0, 500.0, 500.0),
+        _rec("B", "Sell", 2.0, 50.0, 400.0, 500.0),
+    ]
+    result = apply_cash_cap(recs, 1000.0)
+    assert result[0].recommendation.signal == "Hold"
+    assert result[1].recommendation.signal == "Sell"
+    assert result[1].recommendation.shares_to_trade == pytest.approx(2.0)
+
+
+def test_buys_under_cash_returns_unchanged():
+    recs = [
+        _rec("A", "Buy", 5.0, 100.0, 1000.0, 500.0),  # cost = 500
+    ]
+    result = apply_cash_cap(recs, 1000.0)
+    assert result[0].recommendation.signal == "Buy"
+    assert result[0].recommendation.shares_to_trade == pytest.approx(5.0)
+
+
+def test_buys_equal_to_cash_returns_unchanged():
+    recs = [
+        _rec("A", "Buy", 5.0, 100.0, 1000.0, 500.0),  # cost = 500
+    ]
+    result = apply_cash_cap(recs, 500.0)
+    assert result[0].recommendation.signal == "Buy"
+    assert result[0].recommendation.shares_to_trade == pytest.approx(5.0)
+
+
+def test_single_buy_capped_to_cash():
+    # Want to buy 10 shares @ $100 = $1000, but only $400 cash
+    recs = [
+        _rec("A", "Buy", 10.0, 100.0, 1500.0, 500.0),
+    ]
+    result = apply_cash_cap(recs, 400.0)
+    assert result[0].recommendation.signal == "Buy"
+    assert result[0].recommendation.shares_to_trade == pytest.approx(4.0)
+    assert result[0].recommendation.target_position_value == pytest.approx(900.0)
+
+
+def test_multiple_buys_proportional_distribution():
+    # Two buys, each $500 cost, but only $500 cash total -> $250 each
+    recs = [
+        _rec("A", "Buy", 5.0, 100.0, 1000.0, 500.0),  # cost = 500
+        _rec("B", "Buy", 5.0, 100.0, 1000.0, 500.0),  # cost = 500
+    ]
+    result = apply_cash_cap(recs, 500.0)
+    assert result[0].recommendation.shares_to_trade == pytest.approx(2.5)
+    assert result[1].recommendation.shares_to_trade == pytest.approx(2.5)
+
+
+def test_unequal_proportional_distribution():
+    # A wants $800, B wants $200 -> total $1000, only $500 cash
+    # A gets 80% of 500 = 400, B gets 20% of 500 = 100
+    recs = [
+        _rec("A", "Buy", 8.0, 100.0, 1300.0, 500.0),  # cost = 800
+        _rec("B", "Buy", 2.0, 100.0, 700.0, 500.0),    # cost = 200
+    ]
+    result = apply_cash_cap(recs, 500.0)
+    assert result[0].recommendation.shares_to_trade == pytest.approx(4.0)  # 400/100
+    assert result[1].recommendation.shares_to_trade == pytest.approx(1.0)  # 100/100
+
+
+def test_tiny_allocation_becomes_hold():
+    # Want to buy 10 shares @ $100 = $1000, but only $0.05 cash
+    # 0.05 / 100 = 0.0005 shares < 0.001 -> Hold
+    recs = [
+        _rec("A", "Buy", 10.0, 100.0, 1500.0, 500.0),
+    ]
+    result = apply_cash_cap(recs, 0.05)
+    assert result[0].recommendation.signal == "Hold"
+    assert result[0].recommendation.shares_to_trade == 0
+
+
+def test_zero_cash_converts_all_buys_to_hold():
+    recs = [
+        _rec("A", "Buy", 5.0, 100.0, 1000.0, 500.0),
+        _rec("B", "Buy", 3.0, 50.0, 650.0, 500.0),
+    ]
+    result = apply_cash_cap(recs, 0.0)
+    assert result[0].recommendation.signal == "Hold"
+    assert result[0].recommendation.shares_to_trade == 0
+    assert result[1].recommendation.signal == "Hold"
+    assert result[1].recommendation.shares_to_trade == 0
+
+
+def test_sell_and_stay_not_affected_by_capping():
+    recs = [
+        _rec("A", "Buy", 10.0, 100.0, 1500.0, 500.0),  # cost = 1000, will be capped
+        _rec("B", "Sell", 3.0, 50.0, 350.0, 500.0),
+        _rec("C", "Stay", 0, 75.0, 750.0, 750.0),
+    ]
+    result = apply_cash_cap(recs, 200.0)
+    assert result[1].recommendation.signal == "Sell"
+    assert result[1].recommendation.shares_to_trade == pytest.approx(3.0)
+    assert result[2].recommendation.signal == "Stay"
+    assert result[2].recommendation.shares_to_trade == 0
+
+
+def test_penetration_depth_preserved_after_capping():
+    recs = [
+        _rec("A", "Buy", 10.0, 100.0, 1500.0, 500.0, depth=0.75),
+    ]
+    result = apply_cash_cap(recs, 200.0)
+    assert result[0].recommendation.penetration_depth == pytest.approx(0.75)
+
+
+def test_negative_cash_treated_as_zero():
+    recs = [
+        _rec("A", "Buy", 5.0, 100.0, 1000.0, 500.0),
+    ]
+    result = apply_cash_cap(recs, -100.0)
+    assert result[0].recommendation.signal == "Hold"
+    assert result[0].recommendation.shares_to_trade == 0
+
+
+def test_empty_positions_list():
+    result = apply_cash_cap([], 1000.0)
+    assert result == []

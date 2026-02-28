@@ -41,6 +41,7 @@ class PortfolioResponse(BaseModel):
     total_value: float
     initial_value: float
     percent_change: float
+    cash_balance: float
     positions: List[PositionResponse]
 
 
@@ -50,7 +51,17 @@ class UploadHoldingResponse(BaseModel):
     cost_basis: float
 
 
+class CashUpdateRequest(BaseModel):
+    action: str  # "deposit" or "withdraw"
+    amount: float  # positive number
+
+
+class CashUpdateResponse(BaseModel):
+    cash_balance: float
+
+
 class UploadResponse(BaseModel):
     total_value: float
     initial_value: float
+    cash_balance: float
     positions: List[UploadHoldingResponse]

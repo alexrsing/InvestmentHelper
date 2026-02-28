@@ -5,11 +5,11 @@ from datetime import datetime, timezone
 from app.core.dependencies import get_current_active_user
 from app.models.portfolio import Portfolio, HoldingMap
 from app.models.etf import ETF
-from app.schemas.portfolio import PortfolioResponse, PositionResponse, RecommendationResponse, ResearchResponse, UploadResponse, UploadHoldingResponse
+from app.schemas.portfolio import PortfolioResponse, PositionResponse, RecommendationResponse, ResearchResponse, UploadResponse, UploadHoldingResponse, CashUpdateRequest, CashUpdateResponse
 from app.schemas.etf import ErrorResponse
 from app.services.csv_service import parse_fidelity_csv
 from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT, DEFAULT_MIN_POSITION_PCT
-from app.services.recommendation_service import compute_recommendation
+from app.services.recommendation_service import compute_recommendation, PositionRecommendation, apply_cash_cap
 from app.services.research.research_service import get_cached_research
 from app.core.config import settings
 
@@ -92,6 +92,7 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
         min_position_pct = DEFAULT_MIN_POSITION_PCT
 
     # Compute recommendations
+    position_recs = []
     for pos in positions:
         if (
             pos.current_price is not None
@@ -117,6 +118,26 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
                 current_position_value=rec.current_position_value,
                 penetration_depth=rec.penetration_depth,
             )
+            position_recs.append(PositionRecommendation(
+                ticker=pos.ticker,
+                current_price=pos.current_price,
+                recommendation=rec,
+            ))
+
+    # Apply cash capping to buy recommendations
+    cash_balance = float(portfolio.cash_balance or 0)
+    capped_recs = apply_cash_cap(position_recs, cash_balance)
+    capped_by_ticker = {pr.ticker: pr.recommendation for pr in capped_recs}
+    for pos in positions:
+        if pos.ticker in capped_by_ticker:
+            capped = capped_by_ticker[pos.ticker]
+            pos.recommendation = RecommendationResponse(
+                signal=capped.signal,
+                shares_to_trade=capped.shares_to_trade,
+                target_position_value=capped.target_position_value,
+                current_position_value=capped.current_position_value,
+                penetration_depth=capped.penetration_depth,
+            )
 
     # Attach cached research
     cached = get_cached_research(user_id, settings.RESEARCH_EXPIRY_HOURS)
@@ -140,6 +161,7 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
         total_value=total_value,
         initial_value=initial_value,
         percent_change=percent_change,
+        cash_balance=cash_balance,
         positions=positions,
     )
 
@@ -188,6 +210,7 @@ async def upload_portfolio(
         portfolio = Portfolio.get(user_id)
         portfolio.holdings = holdings
         portfolio.initial_value = parsed.initial_value
+        portfolio.cash_balance = parsed.cash_balance
         portfolio.updated_at = datetime.now(timezone.utc)
         portfolio.save()
     except DoesNotExist:
@@ -195,6 +218,7 @@ async def upload_portfolio(
             user_id=user_id,
             holdings=holdings,
             initial_value=parsed.initial_value,
+            cash_balance=parsed.cash_balance,
         )
         portfolio.save()
     except Exception as e:
@@ -207,6 +231,7 @@ async def upload_portfolio(
     return UploadResponse(
         total_value=parsed.total_value,
         initial_value=parsed.initial_value,
+        cash_balance=parsed.cash_balance,
         positions=[
             UploadHoldingResponse(
                 ticker=h.ticker,
@@ -216,3 +241,50 @@ async def upload_portfolio(
             for h in parsed.holdings
         ],
     )
+
+
+@router.patch("/cash", response_model=CashUpdateResponse)
+async def update_cash(
+    request: CashUpdateRequest,
+    current_user: dict = Depends(get_current_active_user),
+):
+    user_id = current_user["user_id"]
+
+    if request.action not in ("deposit", "withdraw"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Action must be 'deposit' or 'withdraw'",
+        )
+
+    if request.amount <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Amount must be greater than 0",
+        )
+
+    try:
+        portfolio = Portfolio.get(user_id)
+    except DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Portfolio not found",
+        )
+    except Exception as e:
+        print(f"Error fetching portfolio for {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching portfolio",
+        )
+
+    current_cash = float(portfolio.cash_balance or 0)
+
+    if request.action == "deposit":
+        new_cash = current_cash + request.amount
+    else:
+        new_cash = max(0.0, current_cash - request.amount)
+
+    portfolio.cash_balance = new_cash
+    portfolio.updated_at = datetime.now(timezone.utc)
+    portfolio.save()
+
+    return CashUpdateResponse(cash_balance=new_cash)

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import Navbar from "../components/layout/Navbar";
 import PortfolioSummary from "../components/portfolio/PortfolioSummary";
+import CashManager from "../components/portfolio/CashManager";
 import ETFList from "../components/etf/ETFList";
 import ETFDetailModal from "../components/etf/ETFDetailModal";
 import { usePortfolio } from "../hooks/usePortfolio";
@@ -122,6 +123,7 @@ export default function Dashboard() {
         {portfolio && (
           <>
             <PortfolioSummary data={portfolio} />
+            <CashManager onUpdate={refetch} />
             <div className="mb-3">
               <h2 className="text-sm text-gray-500 uppercase tracking-wider font-mono">
                 Positions
