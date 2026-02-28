@@ -1,3 +1,11 @@
+export interface Recommendation {
+  signal: string;
+  shares_to_trade: number;
+  target_position_value: number;
+  current_position_value: number;
+  penetration_depth: number;
+}
+
 export interface ETFPosition {
   ticker: string;
   name: string | null;
@@ -6,7 +14,7 @@ export interface ETFPosition {
   risk_range_low: number | null;
   risk_range_high: number | null;
   shares: number;
-  recommendation: string | null;
+  recommendation: Recommendation | null;
 }
 
 export interface PortfolioSummary {

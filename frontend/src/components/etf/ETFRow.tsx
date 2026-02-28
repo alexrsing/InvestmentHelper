@@ -127,8 +127,9 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct, 
           <div className="text-xs uppercase mb-1">
             <span className="text-gray-500">Penetration</span>
             {recommendation && (
-              <span className={`${getRecommendationColor(recommendation)} font-bold`}>
-                {" · "}{recommendation}
+              <span className={`${getRecommendationColor(recommendation.signal)} font-bold`}>
+                {" · "}{recommendation.signal}
+                {recommendation.shares_to_trade > 0 && ` ${recommendation.shares_to_trade.toFixed(1)}`}
               </span>
             )}
           </div>

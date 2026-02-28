@@ -8,6 +8,14 @@ class HoldingResponse(BaseModel):
     cost_basis: float
 
 
+class RecommendationResponse(BaseModel):
+    signal: str
+    shares_to_trade: float
+    target_position_value: float
+    current_position_value: float
+    penetration_depth: float
+
+
 class PositionResponse(BaseModel):
     ticker: str
     name: Optional[str] = None
@@ -16,7 +24,7 @@ class PositionResponse(BaseModel):
     risk_range_low: Optional[float] = None
     risk_range_high: Optional[float] = None
     shares: float
-    recommendation: Optional[str] = None
+    recommendation: Optional[RecommendationResponse] = None
 
 
 class PortfolioResponse(BaseModel):
