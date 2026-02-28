@@ -12,9 +12,11 @@ dependencies = [
     "PyJWT[crypto]",
     "python-multipart",
     "pydantic-settings",
+    "google-genai",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.24",
 ]
