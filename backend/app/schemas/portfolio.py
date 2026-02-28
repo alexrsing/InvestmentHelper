@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field
+from typing import List, Literal, Optional
 
 
 class HoldingResponse(BaseModel):
@@ -41,6 +41,7 @@ class PortfolioResponse(BaseModel):
     total_value: float
     initial_value: float
     percent_change: float
+    cash_balance: float
     positions: List[PositionResponse]
 
 
@@ -50,7 +51,17 @@ class UploadHoldingResponse(BaseModel):
     cost_basis: float
 
 
+class CashUpdateRequest(BaseModel):
+    action: Literal["deposit", "withdraw"]
+    amount: float = Field(gt=0)
+
+
+class CashUpdateResponse(BaseModel):
+    cash_balance: float
+
+
 class UploadResponse(BaseModel):
     total_value: float
     initial_value: float
+    cash_balance: float
     positions: List[UploadHoldingResponse]

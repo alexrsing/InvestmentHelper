@@ -14,6 +14,7 @@ class ParsedPortfolio:
     holdings: list[ParsedHolding]
     total_value: float
     initial_value: float
+    cash_balance: float
 
 
 def parse_fidelity_csv(content: str) -> ParsedPortfolio:
@@ -34,6 +35,7 @@ def parse_fidelity_csv(content: str) -> ParsedPortfolio:
     holdings = []
     total_value = 0.0
     initial_value = 0.0
+    cash_balance = 0.0
 
     reader = csv.reader(lines[header_idx + 1:])
     for row in reader:
@@ -55,9 +57,18 @@ def parse_fidelity_csv(content: str) -> ParsedPortfolio:
 
         try:
             quantity = float(row[2].strip())
-            cost_basis = float(row[6].strip())
             ending_value = float(row[5].strip())
         except (ValueError, IndexError):
+            continue
+
+        cost_basis_str = row[6].strip()
+        if cost_basis_str.lower() == "not applicable":
+            cash_balance += ending_value
+            continue
+
+        try:
+            cost_basis = float(cost_basis_str)
+        except ValueError:
             continue
 
         holdings.append(ParsedHolding(
@@ -75,4 +86,5 @@ def parse_fidelity_csv(content: str) -> ParsedPortfolio:
         holdings=holdings,
         total_value=total_value,
         initial_value=initial_value,
+        cash_balance=cash_balance,
     )

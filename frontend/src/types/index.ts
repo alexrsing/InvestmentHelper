@@ -28,6 +28,7 @@ export interface PortfolioSummary {
   total_value: number;
   initial_value: number;
   percent_change: number;
+  cash_balance: number;
   positions: ETFPosition[];
 }
 

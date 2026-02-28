@@ -22,6 +22,7 @@ class Portfolio(Model):
 
     user_id = UnicodeAttribute(hash_key=True)
     initial_value = NumberAttribute(default=0)
+    cash_balance = NumberAttribute(default=0)
     holdings = ListAttribute(of=HoldingMap, default=list)
     created_at = UTCDateTimeAttribute(default=lambda: datetime.now(timezone.utc))
     updated_at = UTCDateTimeAttribute(default=lambda: datetime.now(timezone.utc))
