@@ -25,7 +25,7 @@ async def get_trading_rules(current_user: dict = Depends(get_current_active_user
         rules = TradingRules.get(user_id)
         return TradingRulesResponse(
             max_position_pct=float(rules.max_position_pct),
-            min_position_pct=float(getattr(rules, "min_position_pct", None) or DEFAULT_MIN_POSITION_PCT),
+            min_position_pct=float(rules.min_position_pct),
         )
     except DoesNotExist:
         return TradingRulesResponse(
