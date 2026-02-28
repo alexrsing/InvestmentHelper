@@ -125,6 +125,7 @@ async def research_positions(
 
     return [
         ResearchResponse(
+            ticker=r["ticker"],
             sentiment=r["sentiment"],
             summary=r["summary"],
             researched_at=r["researched_at"],

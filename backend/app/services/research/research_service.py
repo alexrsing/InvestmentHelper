@@ -58,16 +58,20 @@ class ResearchService:
         }
 
     def get_cached_research(self, user_id: str) -> Dict[str, dict]:
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=self._expiry_hours)
-        results = {}
-        try:
-            for item in ETFResearch.query(user_id):
-                if item.researched_at >= cutoff:
-                    results[item.ticker] = {
-                        "sentiment": item.sentiment,
-                        "summary": item.summary,
-                        "researched_at": item.researched_at.isoformat(),
-                    }
-        except Exception as e:
-            print(f"Error fetching cached research for {user_id}: {e}")
-        return results
+        return get_cached_research(user_id, self._expiry_hours)
+
+
+def get_cached_research(user_id: str, expiry_hours: int = 24) -> Dict[str, dict]:
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=expiry_hours)
+    results = {}
+    try:
+        for item in ETFResearch.query(user_id):
+            if item.researched_at >= cutoff:
+                results[item.ticker] = {
+                    "sentiment": item.sentiment,
+                    "summary": item.summary,
+                    "researched_at": item.researched_at.isoformat(),
+                }
+    except Exception as e:
+        print(f"Error fetching cached research for {user_id}: {e}")
+    return results

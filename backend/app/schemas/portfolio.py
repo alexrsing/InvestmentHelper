@@ -19,6 +19,7 @@ class RecommendationResponse(BaseModel):
 
 
 class ResearchResponse(BaseModel):
+    ticker: Optional[str] = None
     sentiment: str
     summary: str
     researched_at: datetime

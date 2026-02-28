@@ -10,8 +10,7 @@ from app.schemas.etf import ErrorResponse
 from app.services.csv_service import parse_fidelity_csv
 from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT, DEFAULT_MIN_POSITION_PCT
 from app.services.recommendation_service import compute_recommendation
-from app.services.research.gemini_provider import GeminiResearchProvider
-from app.services.research.research_service import ResearchService
+from app.services.research.research_service import get_cached_research
 from app.core.config import settings
 
 router = APIRouter(
@@ -120,14 +119,7 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
             )
 
     # Attach cached research
-    service = ResearchService(
-        provider=GeminiResearchProvider(
-            api_key=settings.GEMINI_API_KEY,
-            model=settings.GEMINI_MODEL,
-        ),
-        expiry_hours=settings.RESEARCH_EXPIRY_HOURS,
-    )
-    cached = service.get_cached_research(user_id)
+    cached = get_cached_research(user_id, settings.RESEARCH_EXPIRY_HOURS)
     for pos in positions:
         if pos.ticker in cached:
             r = cached[pos.ticker]
