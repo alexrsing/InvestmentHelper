@@ -1,4 +1,5 @@
 import json
+import re
 from google import genai
 from google.genai import types
 
@@ -67,14 +68,20 @@ class GeminiResearchProvider(ResearchProvider):
             )
 
     def _parse_response(self, text: str) -> ResearchResult:
+        if not text:
+            return ResearchResult(sentiment="Neutral", summary="No research data returned.")
         try:
-            data = json.loads(text)
+            # Strip markdown code fences if present (e.g. ```json\n{...}\n```)
+            cleaned = re.sub(r"^```(?:json)?\s*\n?", "", text.strip())
+            cleaned = re.sub(r"\n?```\s*$", "", cleaned)
+            data = json.loads(cleaned)
             sentiment = data.get("sentiment", "Neutral")
             if sentiment not in ("Bullish", "Bearish", "Neutral"):
                 sentiment = "Neutral"
             summary = data.get("summary", "No summary available.")
             return ResearchResult(sentiment=sentiment, summary=summary)
         except (json.JSONDecodeError, KeyError, TypeError):
+            print(f"Failed to parse Gemini response: {text[:500]}")
             return ResearchResult(
                 sentiment="Neutral",
                 summary="Unable to parse research results.",

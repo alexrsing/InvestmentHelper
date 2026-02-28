@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # Research
     RESEARCH_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str = _secrets.get("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     RESEARCH_EXPIRY_HOURS: int = 24
 
     class Config:
