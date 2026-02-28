@@ -8,7 +8,7 @@ from app.models.etf import ETF
 from app.schemas.portfolio import PortfolioResponse, PositionResponse, UploadResponse, UploadHoldingResponse
 from app.schemas.etf import ErrorResponse
 from app.services.csv_service import parse_fidelity_csv
-from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT
+from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT, DEFAULT_MIN_POSITION_PCT
 from app.services.recommendation_service import compute_recommendation
 
 router = APIRouter(
@@ -80,11 +80,14 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
     try:
         rules = TradingRules.get(user_id)
         max_position_pct = float(rules.max_position_pct)
+        min_position_pct = float(rules.min_position_pct)
     except DoesNotExist:
         max_position_pct = DEFAULT_MAX_POSITION_PCT
+        min_position_pct = DEFAULT_MIN_POSITION_PCT
     except Exception as e:
         print(f"Error fetching trading rules for {user_id}: {e}")
         max_position_pct = DEFAULT_MAX_POSITION_PCT
+        min_position_pct = DEFAULT_MIN_POSITION_PCT
 
     # Compute recommendations
     for pos in positions:
@@ -103,6 +106,7 @@ async def get_portfolio(current_user: dict = Depends(get_current_active_user)):
                 risk_range_high=pos.risk_range_high,
                 position_weight=position_weight,
                 max_position_pct=max_position_pct,
+                min_position_pct=min_position_pct,
             )
 
     initial_value = portfolio.initial_value or 0

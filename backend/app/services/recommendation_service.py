@@ -8,6 +8,7 @@ def compute_recommendation(
     risk_range_high: float,
     position_weight: float,
     max_position_pct: float,
+    min_position_pct: float,
 ) -> str:
     """Compute a trading recommendation for a single position.
 
@@ -23,6 +24,8 @@ def compute_recommendation(
         return "Buy"
 
     if penetration > SELL_THRESHOLD:
+        if min_position_pct > 0 and position_weight < min_position_pct:
+            return "Hold"
         return "Sell"
 
     return "Stay"

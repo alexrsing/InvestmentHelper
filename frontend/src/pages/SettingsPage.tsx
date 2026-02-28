@@ -6,6 +6,7 @@ import { useTradingRules } from "../hooks/useTradingRules";
 export default function SettingsPage() {
   const { rules, loading, error, saveRules } = useTradingRules();
   const [maxPct, setMaxPct] = useState("");
+  const [minPct, setMinPct] = useState("");
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
@@ -15,20 +16,31 @@ export default function SettingsPage() {
   useEffect(() => {
     if (rules) {
       setMaxPct(String(rules.max_position_pct));
+      setMinPct(String(rules.min_position_pct));
     }
   }, [rules]);
 
   const handleSave = async () => {
-    const value = parseFloat(maxPct);
-    if (isNaN(value) || value < 1 || value > 100) {
-      setFeedback({ type: "error", message: "Enter a value between 1 and 100" });
+    const maxValue = parseFloat(maxPct);
+    const minValue = parseFloat(minPct);
+
+    if (isNaN(maxValue) || maxValue < 1 || maxValue > 100) {
+      setFeedback({ type: "error", message: "Max must be between 1 and 100" });
+      return;
+    }
+    if (isNaN(minValue) || minValue < 0 || minValue > 100) {
+      setFeedback({ type: "error", message: "Min must be between 0 and 100" });
+      return;
+    }
+    if (minValue > 0 && minValue >= maxValue) {
+      setFeedback({ type: "error", message: "Min must be less than max" });
       return;
     }
 
     setSaving(true);
     setFeedback(null);
     try {
-      await saveRules({ max_position_pct: value });
+      await saveRules({ max_position_pct: maxValue, min_position_pct: minValue });
       setFeedback({ type: "success", message: "Saved" });
     } catch (e) {
       setFeedback({
@@ -78,12 +90,36 @@ export default function SettingsPage() {
                 Position Sizing
               </h3>
               <p className="text-gray-500 text-xs mb-4">
-                Maximum percentage of total portfolio value for a single position.
-                When a position reaches this limit, a warning is shown instead of a
-                buy signal.
+                Set min and max percentage of total portfolio value for a single
+                position. Buy signals are suppressed when a position reaches
+                the max limit. Sell signals are suppressed when a position is
+                below the min limit.
               </p>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <label
+                  htmlFor="min-position-pct"
+                  className="text-xs text-gray-500 uppercase font-mono"
+                >
+                  Min Position
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    id="min-position-pct"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={minPct}
+                    onChange={(e) => {
+                      setMinPct(e.target.value);
+                      setFeedback(null);
+                    }}
+                    className="w-20 px-2 py-1.5 bg-[#0d1117] border border-gray-700 rounded text-gray-100 font-mono text-sm focus:border-green-400 focus:outline-none"
+                  />
+                  <span className="text-gray-500 font-mono text-sm">%</span>
+                </div>
+
                 <label
                   htmlFor="max-position-pct"
                   className="text-xs text-gray-500 uppercase font-mono"
@@ -106,6 +142,7 @@ export default function SettingsPage() {
                   />
                   <span className="text-gray-500 font-mono text-sm">%</span>
                 </div>
+
                 <button
                   type="button"
                   onClick={handleSave}
