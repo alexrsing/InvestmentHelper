@@ -38,6 +38,9 @@ def compute_recommendation(
     current_position_value, and penetration_depth.
     """
     range_size = risk_range_high - risk_range_low
+    if range_size <= 0 or current_price <= 0:
+        return _hold(current_position_value)
+
     penetration = ((current_price - risk_range_low) / range_size) * 100
     penetration = max(0.0, min(100.0, penetration))
 

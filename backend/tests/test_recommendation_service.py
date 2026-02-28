@@ -252,3 +252,34 @@ def test_buy_when_already_at_max_value():
     assert result.shares_to_trade == 0
     assert result.target_position_value == pytest.approx(250.0)
     assert result.penetration_depth == 0.0
+
+
+# --- Edge case guard tests ---
+
+
+def test_zero_current_price_returns_hold():
+    result = compute_recommendation(
+        current_price=0.0,
+        risk_range_low=95.0,
+        risk_range_high=115.0,
+        current_position_value=150.0,
+        portfolio_value=10000.0,
+        max_position_pct=2.5,
+        min_position_pct=0.0,
+    )
+    assert result.signal == "Hold"
+    assert result.shares_to_trade == 0
+
+
+def test_zero_range_size_returns_hold():
+    result = compute_recommendation(
+        current_price=100.0,
+        risk_range_low=100.0,
+        risk_range_high=100.0,
+        current_position_value=150.0,
+        portfolio_value=10000.0,
+        max_position_pct=2.5,
+        min_position_pct=0.0,
+    )
+    assert result.signal == "Hold"
+    assert result.shares_to_trade == 0
