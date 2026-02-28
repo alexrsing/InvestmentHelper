@@ -19,6 +19,23 @@ function getRecommendationColor(rec: string): string {
   }
 }
 
+function getSentimentColor(sentiment: string): string {
+  switch (sentiment) {
+    case "Bullish": return "text-green-400";
+    case "Bearish": return "text-red-400";
+    case "Neutral": return "text-yellow-400";
+    default: return "text-gray-400";
+  }
+}
+
+function formatResearchAge(researched_at: string): string {
+  const diffMs = Date.now() - new Date(researched_at).getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (hours < 1) return "just now";
+  if (hours === 1) return "1h ago";
+  return `${hours}h ago`;
+}
+
 export default function ETFRow({ position, onClick, totalValue, maxPositionPct, minPositionPct }: Props) {
   const {
     ticker,
@@ -28,6 +45,7 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct, 
     risk_range_low,
     risk_range_high,
     recommendation,
+    research,
   } = position;
 
   const fmt = (v: number | null) =>
@@ -146,6 +164,19 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct, 
           )}
         </div>
       </div>
+      {research && (
+        <div className="mt-2 pt-2 border-t border-gray-800 text-xs">
+          <span className={`${getSentimentColor(research.sentiment)} font-bold`}>
+            {research.sentiment}
+          </span>
+          <span className="text-gray-400">
+            {" · "}{research.summary}
+          </span>
+          <span className="text-gray-600 ml-2">
+            {formatResearchAge(research.researched_at)}
+          </span>
+        </div>
+      )}
     </button>
   );
 }
