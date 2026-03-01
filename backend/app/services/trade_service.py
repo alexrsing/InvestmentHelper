@@ -76,6 +76,11 @@ def execute_trade(
 
         portfolio.holdings[holding_idx].shares = new_shares
         portfolio.cash_balance = new_cash
+        trade_amount = shares * price
+        if signal == "Buy":
+            portfolio.initial_value = float(portfolio.initial_value or 0) + trade_amount
+        else:
+            portfolio.initial_value = float(portfolio.initial_value or 0) - trade_amount
         portfolio.updated_at = datetime.now(timezone.utc)
         portfolio.save()
 

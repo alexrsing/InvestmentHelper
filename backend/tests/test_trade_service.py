@@ -12,13 +12,14 @@ TICKER = "SPY"
 TODAY = "2026-02-28"
 
 
-def _make_portfolio(shares=10.0, cash=5000.0, ticker=TICKER):
+def _make_portfolio(shares=10.0, cash=5000.0, initial_value=10000.0, ticker=TICKER):
     portfolio = MagicMock()
     holding = MagicMock()
     holding.ticker = ticker
     holding.shares = shares
     portfolio.holdings = [holding]
     portfolio.cash_balance = cash
+    portfolio.initial_value = initial_value
     return portfolio
 
 
@@ -43,9 +44,10 @@ def test_buy_accepted(mock_portfolio_cls, mock_etf_cls, mock_decision_cls, mock_
 
     result = execute_trade(USER_ID, TICKER, "Buy", "accepted", 5.0)
 
-    # Shares increase, cash decreases
+    # Shares increase, cash decreases, initial_value increases
     assert portfolio.holdings[0].shares == 15.0
     assert portfolio.cash_balance == 4500.0
+    assert portfolio.initial_value == 10500.0  # 10000 + (5 * 100)
     portfolio.save.assert_called_once()
     assert result.position_before == 10.0
     assert result.position_after == 15.0
@@ -68,9 +70,10 @@ def test_sell_accepted(mock_portfolio_cls, mock_etf_cls, mock_decision_cls, mock
 
     result = execute_trade(USER_ID, TICKER, "Sell", "accepted", 3.0)
 
-    # Shares decrease, cash increases
+    # Shares decrease, cash increases, initial_value decreases
     assert portfolio.holdings[0].shares == 7.0
     assert portfolio.cash_balance == 5300.0
+    assert portfolio.initial_value == 9700.0  # 10000 - (3 * 100)
     portfolio.save.assert_called_once()
     assert result.position_before == 10.0
     assert result.position_after == 7.0
@@ -93,8 +96,9 @@ def test_decline_no_portfolio_change(mock_portfolio_cls, mock_etf_cls, mock_deci
 
     result = execute_trade(USER_ID, TICKER, "Buy", "declined", 5.0)
 
-    # Portfolio unchanged
+    # Portfolio unchanged (including initial_value)
     portfolio.save.assert_not_called()
+    assert portfolio.initial_value == 10000.0
     assert result.position_before == 10.0
     assert result.position_after == 10.0
     assert result.cash_before == 5000.0
