@@ -1,5 +1,6 @@
-import type { ETFPosition } from "../../types";
+import type { ETFPosition, TradeRequest } from "../../types";
 import RiskBar from "./RiskBar";
+import TradeActions from "./TradeActions";
 
 interface Props {
   position: ETFPosition;
@@ -7,6 +8,9 @@ interface Props {
   totalValue: number;
   maxPositionPct: number | null;
   minPositionPct: number | null;
+  cashBalance: number;
+  onTrade: (request: TradeRequest) => Promise<void>;
+  submitting: boolean;
 }
 
 function getRecommendationColor(rec: string): string {
@@ -36,7 +40,7 @@ function formatResearchAge(researched_at: string): string {
   return `${hours}h ago`;
 }
 
-export default function ETFRow({ position, onClick, totalValue, maxPositionPct, minPositionPct }: Props) {
+export default function ETFRow({ position, onClick, totalValue, maxPositionPct, minPositionPct, cashBalance, onTrade, submitting }: Props) {
   const {
     ticker,
     name,
@@ -177,6 +181,12 @@ export default function ETFRow({ position, onClick, totalValue, maxPositionPct, 
           </span>
         </div>
       )}
+      <TradeActions
+        position={position}
+        cashBalance={cashBalance}
+        onTrade={onTrade}
+        submitting={submitting}
+      />
     </button>
   );
 }

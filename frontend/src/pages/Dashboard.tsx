@@ -9,7 +9,9 @@ import { usePortfolio } from "../hooks/usePortfolio";
 import { useETFHistory } from "../hooks/useETFHistory";
 import { useTradingRules } from "../hooks/useTradingRules";
 import { useResearch } from "../hooks/useResearch";
+import { useTrades } from "../hooks/useTrades";
 import { apiUpload } from "../api/client";
+import type { TradeRequest } from "../types";
 
 export default function Dashboard() {
   const { getToken } = useAuth();
@@ -22,6 +24,7 @@ export default function Dashboard() {
   } = useETFHistory();
   const { rules: tradingRules } = useTradingRules();
   const { researching, error: researchError, triggerResearch } = useResearch();
+  const { submitTrade, submitting: submittingTicker } = useTrades();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -42,6 +45,11 @@ export default function Dashboard() {
 
   const handleResearch = async () => {
     await triggerResearch();
+    refetch();
+  };
+
+  const handleTrade = async (request: TradeRequest) => {
+    await submitTrade(request);
     refetch();
   };
 
@@ -135,6 +143,9 @@ export default function Dashboard() {
               totalValue={portfolio.total_value}
               maxPositionPct={tradingRules?.max_position_pct ?? null}
               minPositionPct={tradingRules?.min_position_pct ?? null}
+              cashBalance={portfolio.cash_balance}
+              onTrade={handleTrade}
+              submittingTicker={submittingTicker}
             />
           </>
         )}

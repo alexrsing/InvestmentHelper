@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
+from app.schemas.trade import DecisionStatusResponse
+
 
 class HoldingResponse(BaseModel):
     ticker: str
@@ -35,6 +37,7 @@ class PositionResponse(BaseModel):
     shares: float
     recommendation: Optional[RecommendationResponse] = None
     research: Optional[ResearchResponse] = None
+    decision_status: Optional[DecisionStatusResponse] = None
 
 
 class PortfolioResponse(BaseModel):
