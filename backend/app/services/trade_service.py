@@ -119,6 +119,17 @@ def get_todays_decisions(user_id: str) -> dict[str, TradeDecision]:
     return results
 
 
+def clear_todays_decisions(user_id: str) -> int:
+    today = _today_str()
+    prefix = f"{today}#"
+    count = 0
+    with TradeDecision.batch_write() as batch:
+        for item in TradeDecision.query(user_id, TradeDecision.decision_key.startswith(prefix)):
+            batch.delete(item)
+            count += 1
+    return count
+
+
 def get_trade_history(user_id: str, limit: int = 200) -> list[TradeDecision]:
     results = []
     for item in TradeDecision.query(

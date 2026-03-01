@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from pynamodb.exceptions import DoesNotExist
 
-from app.services.trade_service import execute_trade, get_todays_decisions, get_trade_history
+from app.services.trade_service import execute_trade, get_todays_decisions, get_trade_history, clear_todays_decisions
 
 
 USER_ID = "test-user-123"
@@ -173,6 +173,35 @@ def test_get_trade_history(mock_decision_cls):
         scan_index_forward=False,
         limit=50,
     )
+
+
+@patch("app.services.trade_service._today_str", return_value=TODAY)
+@patch("app.services.trade_service.TradeDecision")
+def test_clear_todays_decisions(mock_decision_cls, mock_today):
+    item1, item2 = MagicMock(), MagicMock()
+    mock_decision_cls.query.return_value = [item1, item2]
+    batch_ctx = MagicMock()
+    mock_decision_cls.batch_write.return_value.__enter__ = MagicMock(return_value=batch_ctx)
+    mock_decision_cls.batch_write.return_value.__exit__ = MagicMock(return_value=False)
+
+    count = clear_todays_decisions(USER_ID)
+
+    assert count == 2
+    assert batch_ctx.delete.call_count == 2
+
+
+@patch("app.services.trade_service._today_str", return_value=TODAY)
+@patch("app.services.trade_service.TradeDecision")
+def test_clear_todays_decisions_empty(mock_decision_cls, mock_today):
+    mock_decision_cls.query.return_value = []
+    batch_ctx = MagicMock()
+    mock_decision_cls.batch_write.return_value.__enter__ = MagicMock(return_value=batch_ctx)
+    mock_decision_cls.batch_write.return_value.__exit__ = MagicMock(return_value=False)
+
+    count = clear_todays_decisions(USER_ID)
+
+    assert count == 0
+    batch_ctx.delete.assert_not_called()
 
 
 def _capture_decision(kwargs, container):

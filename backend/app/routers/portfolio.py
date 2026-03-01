@@ -12,7 +12,7 @@ from app.services.csv_service import parse_fidelity_csv
 from app.models.trading_rules import TradingRules, DEFAULT_MAX_POSITION_PCT, DEFAULT_MIN_POSITION_PCT
 from app.services.recommendation_service import compute_recommendation, PositionRecommendation, apply_cash_cap
 from app.services.research.research_service import get_cached_research
-from app.services.trade_service import execute_trade, get_todays_decisions, get_trade_history
+from app.services.trade_service import execute_trade, get_todays_decisions, get_trade_history, clear_todays_decisions
 from app.core.config import settings
 
 router = APIRouter(
@@ -236,6 +236,12 @@ async def upload_portfolio(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while saving portfolio",
         )
+
+    # Clear today's trade decisions so fresh recommendations are actionable
+    try:
+        clear_todays_decisions(user_id)
+    except Exception as e:
+        print(f"Error clearing trade decisions for {user_id}: {e}")
 
     return UploadResponse(
         total_value=parsed.total_value,
